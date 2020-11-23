@@ -184,7 +184,7 @@ def gelation(row):
             MATCH (g:Gelation {id: $id})
 
             MERGE (s:GelSolvent_2 {name: $gel_solvent_2})
-            MERGE (g)-[:uses_gel_solvent_1]->(s)
+            MERGE (g)-[:uses_gel_solvent_2]->(s)
 
             """, parameters={"id": gel_id, "gel_solvent_2": gel_solvent_2}
 
@@ -410,3 +410,4 @@ if __name__ == "__main__":
     password = 'password'
     graph = Graph(port, username=username, password=password)
     main()
+
