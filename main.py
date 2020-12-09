@@ -355,33 +355,37 @@ def drying(row):
     drying_pressure = row['Drying Pressure (MPa)']
     drying_time = row['Drying Time (hrs)']
     drying_atmosphere = row['Drying Atmosphere']
-    graph.evaluate(
-        """
-        MATCH (a:Synthesis {id: $id})
-        
-        MERGE (m:Drying {drying_method: $drying_method})
-            
-        MERGE (a)-[d:uses_drying]->(m)
-            SET d.notes = $notes, d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
-                    d.drying_pressure = $drying_pressure, d.drying_time = $drying_time, 
-                    d.drying_atmosphere = $drying_atmosphere
-        
-        """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp,
-                         "drying_heat_rate": drying_heat_rate, "drying_pressure": drying_pressure,
-                         "drying_time": drying_time, "drying_atmosphere": drying_atmosphere,
-                         "drying_method": drying_method}
-    )
 
-    supercritical_solvent = row['Supercritical Solvent']
-    if supercritical_solvent is not None:
+    if drying_method is not None:
+
         graph.evaluate(
             """
-            MATCH (d:Drying {id: $id})
-            MERGE (scs:SuperCriticalSolvent {solvent: $super_critical_solvent})
-            MERGE (d)-[:uses_super_critical_solvent]->(scs)
-
-            """, parameters={"id": gel_id, "super_critical_solvent": supercritical_solvent}
+            MATCH (a:Synthesis {id: $id})
+            
+            MERGE (m:Drying {drying_method: $drying_method})
+                
+            MERGE (a)-[d:uses_drying]->(m)
+                SET d.notes = $notes, d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
+                        d.drying_pressure = $drying_pressure, d.drying_time = $drying_time, 
+                        d.drying_atmosphere = $drying_atmosphere
+            
+            """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp,
+                             "drying_heat_rate": drying_heat_rate, "drying_pressure": drying_pressure,
+                             "drying_time": drying_time, "drying_atmosphere": drying_atmosphere,
+                             "drying_method": drying_method}
         )
+
+        supercritical_solvent = row['Supercritical Solvent']
+        if supercritical_solvent is not None:
+            graph.evaluate(
+                """
+                MATCH (d:Drying {drying_method: $drying_method})
+                MERGE (scs:SuperCriticalSolvent {solvent: $super_critical_solvent})
+                MERGE (d)-[:uses_super_critical_solvent]->(scs)
+    
+                """, parameters={"id": gel_id, "super_critical_solvent": supercritical_solvent,
+                                 "drying_method": drying_method}
+            )
 
     # drying_temp_2 = row['Drying Temp 2 (°C)']
     # drying_heat_rate_2 = row['Drying Heating Rate 2 (°C/min)']
