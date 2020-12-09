@@ -28,6 +28,11 @@ def core_node(row):
                 n.sintering_temp = $sintering_temp, n.sintering_time = $sintering_time,
                 n.sintering_ramp_rate = $sintering_ramp_rate, n.sintering_atmosphere = $sintering_atmosphere,
                 n.sintering_notes = $sintering_notes
+                
+        MERGE (s: Synthesis {id: $id})
+            ON CREATE SET s.name = "Synthesis"
+        
+        MERGE (s)-[:synthesizes]->(n)
         
         """, parameters={"id": gel_id, "final_product": final_product, "pore_volume": pore_volume,
                          "pore_size": pore_size, "nano_particle_size": nano_particle_size,
@@ -73,7 +78,7 @@ def lit_info(row):
     graph.evaluate(
 
         """
-        MATCH (a:Aerogel {id: $id})
+        MATCH (a:Synthesis {id: $id})
         
         MERGE (lit:LitInfo {id: $title})
             ON CREATE SET lit.author = $author, lit.title = $title, lit.year = $year, 
@@ -100,13 +105,15 @@ def gelation(row):
     graph.evaluate(
 
         """
-        MATCH (a:Aerogel {id: $id})
+        MATCH (a:Synthesis {id: $id})
         
-        MERGE (g:Gelation {id: $id})
-            ON CREATE SET g.annas_notes = $annas_notes, g.ph_sol = $ph_sol, g.gelation_temp = $gelation_temp,
+        MERGE (m:Gelation {id: $id})
+            ON CREATE SET m.name = "Gelation"
+            
+        MERGE (a)-[g:uses_gelation]->(m)
+            SET g.annas_notes = $annas_notes, g.ph_sol = $ph_sol, g.gelation_temp = $gelation_temp,
                 g.gelation_pressure = $gelation_pressure, g.gelation_time = $gelation_time,
                 g.aging_time = $aging_time, g.aging_temp = $aging_temp
-        MERGE (a)-[:uses_gelation]->(g)
         
         """, parameters={"id": gel_id, "annas_notes": annas_notes,
                          "ph_sol": ph_sol, "gelation_temp": gelation_temp, "gelation_pressure": gelation_pressure,
@@ -137,14 +144,14 @@ def gelation(row):
             MATCH (g:Gelation {id: $id})
 
             MERGE (z:ZrPrecusor {name: $zr_precusor})
-                ON CREATE SET z.zr_precusor_conc = $zr_precusor_conc
-            MERGE (g)-[:uses_zr_precusor]->(z)
+            MERGE (g)-[rel:uses_zr_precusor]->(z)
+                SET rel.zr_precusor_conc = $zr_precusor_conc
 
             """, parameters={"id": gel_id, "zr_precusor": zr_precusor, "zr_precusor_conc": zr_precusor_conc}
 
         )
 
-    dopante = row['Stabilizer/ Dopant/Drying control chemical additive']
+    dopante = row['Dopant/DCCA/Precursor (non Zr)']
     dopante_conc = row['Dopant Concentration (M)']
     if dopante is not None:
         graph.evaluate(
@@ -153,8 +160,8 @@ def gelation(row):
             MATCH (g:Gelation {id: $id})
 
             MERGE (d:Dopante {name: $dopante})
-                ON CREATE SET d.dopante_conc = $dopante_conc
-            MERGE (g)-[:uses_dopante]->(d)
+            MERGE (g)-[rel:uses_dopante]->(d)
+                SET rel.dopante_conc = $dopante_conc
 
             """, parameters={"id": gel_id, "dopante": dopante, "dopante_conc": dopante_conc}
 
@@ -169,8 +176,8 @@ def gelation(row):
             MATCH (g:Gelation {id: $id})
 
             MERGE (s:GelSolvent_1 {name: $gel_solvent_1})
-                ON CREATE SET s.gel_solvent_1_conc = $gel_solvent_1_conc
-            MERGE (g)-[:uses_gel_solvent_1]->(s)
+            MERGE (g)-[rel:uses_gel_solvent_1]->(s)
+                SET rel.gel_solvent_1_conc = $gel_solvent_1_conc
 
             """, parameters={"id": gel_id, "gel_solvent_1": gel_solvent_1, "gel_solvent_1_conc": gel_solvent_1_conc}
 
@@ -213,8 +220,8 @@ def gelation(row):
             MATCH (g:Gelation {id: $id})
 
             MERGE (m:Modifier {name: $modifier})
-                ON CREATE SET m.modifier_conc = $modifier_conc
-            MERGE (g)-[:uses_modifier]->(m)
+            MERGE (g)-[rel:uses_modifier]->(m)
+                SET rel.modifier_conc = $modifier_conc
 
             """, parameters={"id": gel_id, "modifier": modifier, "modifier_conc": modifier_conc}
 
@@ -229,8 +236,8 @@ def gelation(row):
             MATCH (g:Gelation {id: $id})
 
             MERGE (s:Surfactant {name: $surfactant})
-                ON CREATE SET s.surfactant_conc = $surfactant_conc
-            MERGE (g)-[:uses_surfactant]->(s)
+            MERGE (g)-[rel:uses_surfactant]->(s)
+                SET rel.surfactant_conc = $surfactant_conc
 
             """, parameters={"id": gel_id, "surfactant": surfactant, "surfactant_conc": surfactant_conc}
 
@@ -238,15 +245,15 @@ def gelation(row):
 
     gelation_agent = row['Gelation Agent']
     gelation_agent_conc = row['Gelation Agent (M)']
-    if surfactant is not None:
+    if gelation_agent is not None:
         graph.evaluate(
 
             """
             MATCH (g:Gelation {id: $id})
 
             MERGE (a:GelationAgent {name: $gelation_agent})
-                ON CREATE SET a.gelation_agent_conc = $gelation_agent_conc
-            MERGE (g)-[:uses_surfactant]->(a)
+            MERGE (g)-[rel:uses_surfactant]->(a)
+                SET rel.gelation_agent_conc = $gelation_agent_conc
 
             """, parameters={"id": gel_id, "gelation_agent": gelation_agent, "gelation_agent_conc": gelation_agent_conc}
 
@@ -259,7 +266,7 @@ def washing_steps(row):
 
     graph.evaluate(
         """
-        MATCH (a:Aerogel {id: $id})
+        MATCH (a:Synthesis {id: $id})
         MERGE (w:WashingSteps {id: $id})
             ON CREATE SET w.notes = $notes
         MERGE (a)-[:uses_washing_steps]->(w)
@@ -275,10 +282,10 @@ def washing_steps(row):
             """
             MATCH (w:WashingSteps {id: $id})
             
-            MERGE (s:WashingStep {solvent: $wash_solvent})
-                ON CREATE SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
+            MERGE (m:WashingStep {solvent: $wash_solvent})
+            MERGE (w)-[s:washing_step_1]->(m)
+                SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
                     s.wash_temp = $wash_temp
-            MERGE (w)-[:washing_step_1]->(s)
             
             """, parameters={"id": gel_id, "wash_solvent": wash_solvent_1, "wash_times": wash_times_1,
                              "wash_duration": wash_duration_1, "wash_temp": wash_temp_1}
@@ -293,10 +300,10 @@ def washing_steps(row):
             """
             MATCH (w:WashingSteps {id: $id})
 
-            MERGE (s:WashingStep {solvent: $wash_solvent})
-                ON CREATE SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
+            MERGE (m:WashingStep {solvent: $wash_solvent})
+            MERGE (w)-[s:washing_step_2]->(m)
+                SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
                     s.wash_temp = $wash_temp
-            MERGE (w)-[:washing_step_1]->(s)
 
             """, parameters={"id": gel_id, "wash_solvent": wash_solvent_2, "wash_times": wash_times_2,
                              "wash_duration": wash_duration_2, "wash_temp": wash_temp_2}
@@ -311,10 +318,10 @@ def washing_steps(row):
             """
             MATCH (w:WashingSteps {id: $id})
 
-            MERGE (s:WashingStep {solvent: $wash_solvent})
-                ON CREATE SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
+            MERGE (m:WashingStep {solvent: $wash_solvent})
+            MERGE (w)-[s:washing_step_3]->(m)
+                SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
                     s.wash_temp = $wash_temp
-            MERGE (w)-[:washing_step_1]->(s)
 
             """, parameters={"id": gel_id, "wash_solvent": wash_solvent_3, "wash_times": wash_times_3,
                              "wash_duration": wash_duration_3, "wash_temp": wash_temp_3}
@@ -329,10 +336,10 @@ def washing_steps(row):
             """
             MATCH (w:WashingSteps {id: $id})
 
-            MERGE (s:WashingStep {solvent: $wash_solvent})
-                ON CREATE SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
+            MERGE (m:WashingStep {solvent: $wash_solvent})
+            MERGE (w)-[s:washing_step_4]->(m)
+                SET s.wash_times = $wash_times, s.wash_duration = $wash_duration,
                     s.wash_temp = $wash_temp
-            MERGE (w)-[:washing_step_1]->(s)
 
             """, parameters={"id": gel_id, "wash_solvent": wash_solvent_4, "wash_times": wash_times_4,
                              "wash_duration": wash_duration_4, "wash_temp": wash_temp_4}
@@ -341,6 +348,7 @@ def washing_steps(row):
 
 def drying(row):
     gel_id = row['Index']
+    drying_method = row['Drying Method']
     drying_notes = row['Drying Notes']
     drying_temp = row['Drying Temp (°C)']
     drying_heat_rate = row['Drying Heating Rate (°C/min)']
@@ -349,29 +357,20 @@ def drying(row):
     drying_atmosphere = row['Drying Atmosphere']
     graph.evaluate(
         """
-        MATCH (a:Aerogel {id: $id})
+        MATCH (a:Synthesis {id: $id})
         
-        MERGE (d:Drying {id: $id})
-            ON CREATE SET d.notes = $notes, d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
-                d.drying_pressure = $drying_pressure, d.drying_time = $drying_time, 
-                d.drying_atmosphere = $drying_atmosphere
-        MERGE (a)-[:uses_drying]->(d)
+        MERGE (m:Drying {drying_method: $drying_method})
+            
+        MERGE (a)-[d:uses_drying]->(m)
+            SET d.notes = $notes, d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
+                    d.drying_pressure = $drying_pressure, d.drying_time = $drying_time, 
+                    d.drying_atmosphere = $drying_atmosphere
         
         """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp,
                          "drying_heat_rate": drying_heat_rate, "drying_pressure": drying_pressure,
-                         "drying_time": drying_time, "drying_atmosphere": drying_atmosphere}
+                         "drying_time": drying_time, "drying_atmosphere": drying_atmosphere,
+                         "drying_method": drying_method}
     )
-
-    drying_method = row['Drying Method']
-    if drying_method is not None:
-        graph.evaluate(
-            """
-            MATCH (d:Drying {id: $id})
-            MERGE (m:DryingMethod {method: $drying_method})
-            MERGE (d)-[:uses_drying_method]->(m)
-            
-            """, parameters={"id": gel_id, "drying_method": drying_method}
-        )
 
     supercritical_solvent = row['Supercritical Solvent']
     if supercritical_solvent is not None:
