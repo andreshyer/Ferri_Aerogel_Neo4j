@@ -2,30 +2,40 @@ import pandas as pd
 from py2neo import Graph
 
 
+def __ttcn__(n):
+    if not n:
+        return n
+    try:
+        return float(n)
+    except ValueError:
+        return n
+
+
 def core_node(row):
     gel_id = row['Index']
 
     final_product = row['Final Material']
-    pore_volume = row['Pore Volume (cm3/g)']
-    pore_size = row['Pore Size (nm)']
-    nano_particle_size = row['Nanoparticle Size (nm)']
-    surface_area = row['Surface Area (m2/g)']
-    density = row['Density (g/cm3)']
-    thermal_conductivity = row['Thermal Conductivity (W/mK)']
+    pore_volume = __ttcn__(row['Pore Volume (cm3/g)'])
+    pore_size = __ttcn__(row['Pore Size (nm)'])
+    nano_particle_size = __ttcn__(row['Nanoparticle Size (nm)'])
+    surface_area = __ttcn__(row['Surface Area (m2/g)'])
+    density = __ttcn__(row['Density (g/cm3)'])
+    thermal_conductivity = __ttcn__(row['Thermal Conductivity (W/mK)'])
     core_notes = row['Notes']
 
     graph.evaluate(
 
         """
-        MERGE (n: Aerogel {id: $id})
-            ON CREATE SET n.final_product = $final_product, n.pore_volume = $pore_volume, n.pore_size = $pore_size,
-                n.nano_particle_size = $nano_particle_size, n.surface_area = $surface_area, n.density = $density,
-                n.thermal_conductivity = $thermal_conductivity, n.core_notes = $core_notes
+        MERGE (a: Aerogel {id: $id})
+            ON CREATE SET a.final_product = $final_product, a.core_notes = $core_notes
                 
         MERGE (s: Synthesis {id: $id})
             ON CREATE SET s.name = "Synthesis"
         
-        MERGE (s)-[:synthesizes]->(n)
+        MERGE (s)-[n:synthesizes]->(a)
+            ON CREATE SET n.pore_volume = $pore_volume, n.pore_size = $pore_size, 
+                n.nano_particle_size = $nano_particle_size, n.surface_area = $surface_area,
+                n.density = $density, n.thermal_conductivity = $thermal_conductivity
         
         """, parameters={"id": gel_id, "final_product": final_product, "pore_volume": pore_volume,
                          "pore_size": pore_size, "nano_particle_size": nano_particle_size,
@@ -34,7 +44,7 @@ def core_node(row):
     )
 
     porosity = row['Porosity']
-    porosity_percent = row['Porosity (%)']
+    porosity_percent = __ttcn__(row['Porosity (%)'])
     if porosity is not None:
         porosities = porosity.split(', ')
         for porosity in porosities:
@@ -67,9 +77,9 @@ def core_node(row):
 
 def sintering(row):
     gel_id = row['Index']
-    sintering_temp = row['Sintering Temp (°C)']
-    sintering_time = row['Sintering Time (min)']
-    sintering_ramp_rate = row['Ramp Rate (°C/min)']
+    sintering_temp = __ttcn__(row['Sintering Temp (°C)'])
+    sintering_time = __ttcn__(row['Sintering Time (min)'])
+    sintering_ramp_rate = __ttcn__(row['Ramp Rate (°C/min)'])
     sintering_notes = row['Sintering Notes']
 
     graph.evaluate(
@@ -77,11 +87,12 @@ def sintering(row):
         """
         MATCH (a: Aerogel {id: $id})
         
-        MERGE (n:Sintering {id: $id})
-            ON CREATE SET n.sintering_temp = $sintering_temp, n.sintering_time = $sintering_time,
-                n.sintering_ramp_rate = $sintering_ramp_rate, n.sintering_notes = $sintering_notes
+        MERGE (s:Sintering {id: $id})
+            ON CREATE SET s.sintering_notes = $sintering_notes
                 
-        MERGE (a)-[:uses_sintering]->(n)
+        MERGE (a)-[n:uses_sintering]->(s)
+            ON CREATE SET n.sintering_temp = $sintering_temp, n.sintering_time = $sintering_time,
+                n.sintering_ramp_rate = $sintering_ramp_rate
     
         """, parameters={"id": gel_id, "sintering_temp": sintering_temp, "sintering_time": sintering_time,
                          "sintering_ramp_rate": sintering_ramp_rate,
@@ -110,12 +121,11 @@ def lit_info(row):
 
         """
         MATCH (a:Synthesis {id: $id})
-        
         MERGE (lit:LitInfo {id: $title})
-            ON CREATE SET lit.author = $author, lit.title = $title, lit.year = $year, 
-                lit.cited_reference = $cited_reference, lit.times_cited = $times_cited
-        MERGE (a)-[:has_lit_info]->(lit)
-        
+            ON CREATE SET lit.author = $author, lit.title = $title
+        MERGE (a)-[n:has_lit_info]->(lit)
+            ON CREATE SET n.year = $year, n.cited_reference = $cited_reference, n.times_cited = $times_cited
+            
         """, parameters={"id": gel_id, "author": author, "title": title, "year": year,
                          "cited_reference": cited_reference, "times_cited": times_cited}
 
@@ -125,12 +135,12 @@ def lit_info(row):
 def gel(row):
     gel_id = row['Index']
     annas_notes = row["Anna's Notes"]
-    ph_sol = row['pH final sol']
-    gelation_temp = row['Gelation Temp (°C)']
-    gelation_pressure = row['Gelation Pressure (MPa)']
-    gelation_time = row['Gelation Time (mins)']
-    aging_temp = row['Aging Temp (°C)']
-    aging_time = row['Aging Time (hrs)']
+    ph_sol = __ttcn__(row['pH final sol'])
+    gelation_temp = __ttcn__(row['Gelation Temp (°C)'])
+    gelation_pressure = __ttcn__(row['Gelation Pressure (MPa)'])
+    gelation_time = __ttcn__(row['Gelation Time (mins)'])
+    aging_temp = __ttcn__(row['Aging Temp (°C)'])
+    aging_time = __ttcn__(row['Aging Time (hrs)'])
 
     graph.evaluate(
 
@@ -166,7 +176,7 @@ def gel(row):
         )
 
     zr_precusor = row['Zr Precursor']
-    zr_precusor_conc = row['Zr Precursor Concentration (M)']
+    zr_precusor_conc = __ttcn__(row['Zr Precursor Concentration (M)'])
     if zr_precusor is not None:
         graph.evaluate(
 
@@ -182,7 +192,7 @@ def gel(row):
         )
 
     dopant = row['Dopant']
-    dopant_conc = row['Dopant Concentration (M)']
+    dopant_conc = __ttcn__(row['Dopant Concentration (M)'])
     if dopant is not None:
         graph.evaluate(
 
@@ -198,7 +208,7 @@ def gel(row):
         )
 
     gel_solvent_1 = row['Solvent 1']
-    gel_solvent_1_conc = row['Solvent 1 Concentration (M)']
+    gel_solvent_1_conc = __ttcn__(row['Solvent 1 Concentration (M)'])
     if gel_solvent_1 is not None:
         graph.evaluate(
 
@@ -244,7 +254,7 @@ def gel(row):
             )
 
     modifier = row['Modifier']
-    modifier_conc = row['Modifier Concentration (M)']
+    modifier_conc = __ttcn__(row['Modifier Concentration (M)'])
     if modifier is not None:
         graph.evaluate(
 
@@ -260,7 +270,7 @@ def gel(row):
         )
 
     surfactant = row['Surfactant']
-    surfactant_conc = row['Surfactant Concentration (M)']
+    surfactant_conc = __ttcn__(row['Surfactant Concentration (M)'])
     if surfactant is not None:
         graph.evaluate(
 
@@ -276,7 +286,7 @@ def gel(row):
         )
 
     gelation_agent = row['Gelation Agent']
-    gelation_agent_conc = row['Gelation Agent (M)']
+    gelation_agent_conc = __ttcn__(row['Gelation Agent (M)'])
     if gelation_agent is not None:
         graph.evaluate(
 
@@ -307,8 +317,8 @@ def washing_steps(row):
 
     wash_solvent_1 = row['Wash Solvent 1']
     wash_times_1 = row['Wash Times 1 (#)']
-    wash_duration_1 = row['Wash Duration 1 (days)']
-    wash_temp_1 = row['Wash Temp 1 (°C)']
+    wash_duration_1 = __ttcn__(row['Wash Duration 1 (days)'])
+    wash_temp_1 = __ttcn__(row['Wash Temp 1 (°C)'])
     if wash_solvent_1 is not None:
         graph.evaluate(
             """
@@ -325,8 +335,8 @@ def washing_steps(row):
 
     wash_solvent_2 = row['Wash Solvent 2']
     wash_times_2 = row['Wash Times 2 (#)']
-    wash_duration_2 = row['Wash Duration 2 (days)']
-    wash_temp_2 = row['Wash Temp 2 (°C)']
+    wash_duration_2 = __ttcn__(row['Wash Duration 2 (days)'])
+    wash_temp_2 = __ttcn__(row['Wash Temp 2 (°C)'])
     if wash_solvent_2 is not None:
         graph.evaluate(
             """
@@ -343,8 +353,8 @@ def washing_steps(row):
 
     wash_solvent_3 = row['Wash Solvent 3']
     wash_times_3 = row['Wash Times 3 (#)']
-    wash_duration_3 = row['Wash Duration 3 (days)']
-    wash_temp_3 = row['Wash Temp 3 (°C)']
+    wash_duration_3 = __ttcn__(row['Wash Duration 3 (days)'])
+    wash_temp_3 = __ttcn__(row['Wash Temp 3 (°C)'])
     if wash_solvent_3 is not None:
         graph.evaluate(
             """
@@ -361,8 +371,8 @@ def washing_steps(row):
 
     wash_solvent_4 = row['Wash Solvent 4']
     wash_times_4 = row['Wash Times 4 (#)']
-    wash_duration_4 = row['Wash Duration 4 (days)']
-    wash_temp_4 = row['Wash Temp 4 (°C)']
+    wash_duration_4 = __ttcn__(row['Wash Duration 4 (days)'])
+    wash_temp_4 = __ttcn__(row['Wash Temp 4 (°C)'])
     if wash_solvent_4 is not None:
         graph.evaluate(
             """
@@ -384,11 +394,11 @@ def drying(row):
     drying_solvent = row['Drying Solvent']
     drying_notes = row['Drying Notes']
 
-    drying_temp_1 = row['Drying Temp (°C)']
-    drying_heat_rate_1 = row['Drying Heating Rate (°C/min)']
-    drying_pressure_1 = row['Drying Pressure (MPa)']
-    drying_time_1 = row['Drying Time (hrs)']
-    drying_atmosphere_1 = row['Drying Atmosphere']
+    drying_temp_1 = __ttcn__(row['Drying Temp (°C)'])
+    drying_heat_rate_1 = __ttcn__(row['Drying Heating Rate (°C/min)'])
+    drying_pressure_1 = __ttcn__(row['Drying Pressure (MPa)'])
+    drying_time_1 = __ttcn__(row['Drying Time (hrs)'])
+    drying_atmosphere_1 = __ttcn__(row['Drying Atmosphere'])
 
     ones = [drying_notes, drying_temp_1, drying_heat_rate_1, drying_pressure_1, drying_time_1, drying_atmosphere_1]
 
@@ -397,11 +407,11 @@ def drying(row):
         graph.evaluate(
             """
             MATCH (a:Synthesis {id: $id})
-            MERGE (d:DryingStep {id: $id, step: 1})
-                ON CREATE SET d.notes = $notes, d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
-                        d.drying_pressure = $drying_pressure, d.drying_time = $drying_time, 
-                        d.drying_atmosphere = $drying_atmosphere
-            MERGE (a)-[:uses_drying_step]->(d)
+            MERGE (n:DryingStep {id: $id, step: 1})
+                ON CREATE SET n.notes = $notes, n.drying_atmosphere = $drying_atmosphere
+            MERGE (a)-[d:uses_drying_step]->(n)
+                ON CREATE SET d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
+                        d.drying_pressure = $drying_pressure, d.drying_time = $drying_time
             """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp_1,
                              "drying_heat_rate": drying_heat_rate_1, "drying_pressure": drying_pressure_1,
                              "drying_time": drying_time_1, "drying_atmosphere": drying_atmosphere_1}
@@ -426,11 +436,11 @@ def drying(row):
                 """, parameters={"id": gel_id, "drying_solvent": drying_solvent}
             )
 
-    drying_temp_2 = row['Drying Temp 2 (°C)']
-    drying_heat_rate_2 = row['Drying Heating Rate 2 (°C/min)']
-    drying_pressure_2 = row['Drying Pressure 2 (MPa)']
-    drying_time_2 = row['Drying Time 2 (hrs)']
-    drying_atmosphere_2 = row['Drying Atmosphere 2']
+    drying_temp_2 = __ttcn__(row['Drying Temp 2 (°C)'])
+    drying_heat_rate_2 = __ttcn__(row['Drying Heating Rate 2 (°C/min)'])
+    drying_pressure_2 = __ttcn__(row['Drying Pressure 2 (MPa)'])
+    drying_time_2 = __ttcn__(row['Drying Time 2 (hrs)'])
+    drying_atmosphere_2 = __ttcn__(row['Drying Atmosphere 2'])
 
     twos = [drying_temp_2, drying_heat_rate_2, drying_pressure_2, drying_time_2, drying_atmosphere_2]
 
@@ -439,11 +449,11 @@ def drying(row):
         graph.evaluate(
             """
             MATCH (a:Synthesis {id: $id})
-            MERGE (d:DryingStep {id: $id, step: 2})
-                ON CREATE SET d.notes = $notes, d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
-                        d.drying_pressure = $drying_pressure, d.drying_time = $drying_time, 
-                        d.drying_atmosphere = $drying_atmosphere
-            MERGE (a)-[:uses_drying_step]->(d)
+            MERGE (n:DryingStep {id: $id, step: 2})
+                ON CREATE SET n.notes = $notes, n.drying_atmosphere = $drying_atmosphere
+            MERGE (a)-[d:uses_drying_step]->(n)
+                ON CREATE SET d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
+                        d.drying_pressure = $drying_pressure, d.drying_time = $drying_time
             """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp_2,
                              "drying_heat_rate": drying_heat_rate_2, "drying_pressure": drying_pressure_2,
                              "drying_time": drying_time_2, "drying_atmosphere": drying_atmosphere_2}
