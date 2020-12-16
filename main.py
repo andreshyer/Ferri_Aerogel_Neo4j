@@ -492,7 +492,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # input("Press any button to continue")
     port = 'bolt://localhost:7687'
     username = 'Neo4j'
     password = 'password'
