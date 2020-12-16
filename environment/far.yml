@@ -1,0 +1,7 @@
+name: far
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - pandas
+  - py2neo
