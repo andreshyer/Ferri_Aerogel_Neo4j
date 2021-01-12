@@ -1,4 +1,5 @@
 import pandas as pd
+from tqdm import tqdm
 from py2neo import Graph
 
 
@@ -191,21 +192,37 @@ def gel(row):
 
         )
 
-    dopant = row['Dopant']
+    dopants = row['Dopant']
     dopant_conc = __ttcn__(row['Dopant Concentration (M)'])
-    if dopant is not None:
-        graph.evaluate(
+    if dopants is not None:
+        dopants = dopants.split(', ')
 
-            """
-            MATCH (g:Gel {id: $id})
+        if len(dopants) == 1:
+            graph.evaluate(
 
-            MERGE (d:Dopant {name: $dopant})
-            MERGE (g)-[rel:uses_dopant]->(d)
-                SET rel.dopant_conc = $dopant_conc
+                """
+                MATCH (g:Gel {id: $id})
+                    SET g.total_dopant_conc = $dopant_conc
+                MERGE (d:Dopant {name: $dopant})
+                MERGE (g)-[rel:uses_dopant]->(d)
+                    SET rel.dopant_conc = $dopant_conc
 
-            """, parameters={"id": gel_id, "dopant": dopant, "dopant_conc": dopant_conc}
+                """, parameters={"id": gel_id, "dopant": dopants[0], "dopant_conc": dopant_conc}
 
-        )
+            )
+
+        else:
+            for dopant in dopants:
+                graph.evaluate(
+
+                    """
+                    MATCH (g:Gel {id: $id})
+                        SET g.total_dopant_conc = $dopant_conc
+                    MERGE (d:Dopant {name: $dopant})
+                    MERGE (g)-[rel:uses_dopant]->(d)
+                    """, parameters={"id": gel_id, "dopant": dopant, "dopant_conc": dopant_conc}
+
+                )
 
     gel_solvent_1 = row['Solvent 1']
     gel_solvent_1_conc = __ttcn__(row['Solvent 1 Concentration (M)'])
@@ -285,21 +302,41 @@ def gel(row):
 
         )
 
-    gelation_agent = row['Gelation Agent']
+    gelation_agents = row['Gelation Agent']
     gelation_agent_conc = __ttcn__(row['Gelation Agent (M)'])
-    if gelation_agent is not None:
-        graph.evaluate(
+    if gelation_agents is not None:
+        gelation_agents = gelation_agents.split(', ')
 
-            """
-            MATCH (g:Gel {id: $id})
+        if len(gelation_agents) == 1:
+            graph.evaluate(
 
-            MERGE (a:GelationAgent {name: $gelation_agent})
-            MERGE (g)-[rel:uses_gelation_agent]->(a)
-                SET rel.gelation_agent_conc = $gelation_agent_conc
+                """
+                MATCH (g:Gel {id: $id})
+                    SET g.total_gelation_agent_conc = $gelation_agent_conc
+    
+                MERGE (a:GelationAgent {name: $gelation_agent})
+                MERGE (g)-[rel:uses_gelation_agent]->(a)
+                    SET rel.gelation_agent_conc = $gelation_agent_conc
+    
+                """, parameters={"id": gel_id, "gelation_agent": gelation_agents[0], "gelation_agent_conc": gelation_agent_conc}
 
-            """, parameters={"id": gel_id, "gelation_agent": gelation_agent, "gelation_agent_conc": gelation_agent_conc}
+            )
 
-        )
+        else:
+            for gelation_agent in gelation_agents:
+                graph.evaluate(
+
+                    """
+                    MATCH (g:Gel {id: $id})
+                        SET g.total_gelation_agent_conc = $gelation_agent_conc
+
+                    MERGE (a:GelationAgent {name: $gelation_agent})
+                    MERGE (g)-[rel:uses_gelation_agent]->(a)
+
+                    """, parameters={"id": gel_id, "gelation_agent": gelation_agent,
+                                     "gelation_agent_conc": gelation_agent_conc}
+
+                )
 
 
 def washing_steps(row):
@@ -400,41 +437,37 @@ def drying(row):
     drying_time_1 = __ttcn__(row['Drying Time (hrs)'])
     drying_atmosphere_1 = __ttcn__(row['Drying Atmosphere'])
 
-    ones = [drying_notes, drying_temp_1, drying_heat_rate_1, drying_pressure_1, drying_time_1, drying_atmosphere_1]
+    graph.evaluate(
+        """
+        MATCH (a:Synthesis {id: $id})
+        MERGE (n:DryingStep {id: $id, step: 1})
+            ON CREATE SET n.notes = $notes, n.drying_atmosphere = $drying_atmosphere
+        MERGE (a)-[d:uses_drying_step]->(n)
+            ON CREATE SET d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
+                    d.drying_pressure = $drying_pressure, d.drying_time = $drying_time
+        """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp_1,
+                         "drying_heat_rate": drying_heat_rate_1, "drying_pressure": drying_pressure_1,
+                         "drying_time": drying_time_1, "drying_atmosphere": drying_atmosphere_1}
+    )
 
-    if any(ones):
+    if drying_method is not None:
 
         graph.evaluate(
             """
-            MATCH (a:Synthesis {id: $id})
-            MERGE (n:DryingStep {id: $id, step: 1})
-                ON CREATE SET n.notes = $notes, n.drying_atmosphere = $drying_atmosphere
-            MERGE (a)-[d:uses_drying_step]->(n)
-                ON CREATE SET d.drying_temp = $drying_temp, d.drying_heat_rate = $drying_heat_rate,
-                        d.drying_pressure = $drying_pressure, d.drying_time = $drying_time
-            """, parameters={"id": gel_id, "notes": drying_notes, "drying_temp": drying_temp_1,
-                             "drying_heat_rate": drying_heat_rate_1, "drying_pressure": drying_pressure_1,
-                             "drying_time": drying_time_1, "drying_atmosphere": drying_atmosphere_1}
+            MATCH (a:DryingStep {id: $id, step: 1})
+            MERGE (m:DryingMethod {drying_method: $drying_method})    
+            MERGE (a)-[d:uses_drying_method]->(m)
+            """, parameters={"id": gel_id, "drying_method": drying_method}
         )
 
-        if drying_method is not None:
-
-            graph.evaluate(
-                """
-                MATCH (a:DryingStep {id: $id, step: 1})
-                MERGE (m:DryingMethod {drying_method: $drying_method})    
-                MERGE (a)-[d:uses_drying_method]->(m)
-                """, parameters={"id": gel_id, "drying_method": drying_method}
-            )
-
-        if drying_solvent is not None:
-            graph.evaluate(
-                """
-                MATCH (a:DryingStep {id: $id, step: 1})
-                MERGE (d:DryingSolvent {solvent: $drying_solvent})
-                MERGE (a)-[:uses_drying_solvent]->(d)
-                """, parameters={"id": gel_id, "drying_solvent": drying_solvent}
-            )
+    if drying_solvent is not None:
+        graph.evaluate(
+            """
+            MATCH (a:DryingStep {id: $id, step: 1})
+            MERGE (d:DryingSolvent {solvent: $drying_solvent})
+            MERGE (a)-[:uses_drying_solvent]->(d)
+            """, parameters={"id": gel_id, "drying_solvent": drying_solvent}
+        )
 
     drying_temp_2 = __ttcn__(row['Drying Temp 2 (°C)'])
     drying_heat_rate_2 = __ttcn__(row['Drying Heating Rate 2 (°C/min)'])
@@ -479,10 +512,12 @@ def drying(row):
 
 
 def main():
+    print("Inserting data into Neo4j...")
     df = pd.read_csv('Aerogel.csv')
     df = df.where(pd.notnull(df), None)
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
     rows = df.to_dict('records')
-    for row in rows:
+    for row in tqdm(rows):
         core_node(row)
         sintering(row)
         lit_info(row)
