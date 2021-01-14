@@ -149,7 +149,7 @@ def gel(row):
         MATCH (a:Synthesis {id: $id})
         
         MERGE (m:Gel {id: $id})
-            ON CREATE SET m.name = "Gel"
+            ON CREATE SET m.name = "Gel", m.surface_area = $surface_area
             
         MERGE (a)-[g:uses_gel]->(m)
             SET g.annas_notes = $annas_notes, g.ph_sol = $ph_sol, g.gelation_temp = $gelation_temp,
@@ -307,10 +307,9 @@ def gel(row):
     gelation_agent_conc = __ttcn__(row['Gelation Agent (M)'])
     if gelation_agents is not None:
         gelation_agents = gelation_agents.split(', ')
-        gelation_agent_name = gelation_agents[0]
-        if gelation_agent_name == "MSA":
-            gelation_agent_name = "mercaptosuccinic acid"
+
         if len(gelation_agents) == 1:
+
             graph.evaluate(
 
                 """
@@ -321,7 +320,7 @@ def gel(row):
                 MERGE (g)-[rel:uses_gelation_agent]->(a)
                     SET rel.gelation_agent_conc = $gelation_agent_conc
     
-                """, parameters={"id": gel_id, "gelation_agent": gelation_agent_name, "gelation_agent_conc": gelation_agent_conc}
+                """, parameters={"id": gel_id, "gelation_agent": gelation_agents[0], "gelation_agent_conc": gelation_agent_conc}
 
             )
 
