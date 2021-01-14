@@ -28,7 +28,7 @@ def core_node(row):
 
         """
         MERGE (a: Aerogel {id: $id})
-            ON CREATE SET a.final_product = $final_product, a.core_notes = $core_notes
+            ON CREATE SET a.final_product = $final_product, a.core_notes = $core_notes, a.surface_area = $surface_area
                 
         MERGE (s: Synthesis {id: $id})
             ON CREATE SET s.name = "Synthesis"
