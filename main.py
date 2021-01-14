@@ -142,7 +142,7 @@ def gel(row):
     gelation_time = __ttcn__(row['Gelation Time (mins)'])
     aging_temp = __ttcn__(row['Aging Temp (°C)'])
     aging_time = __ttcn__(row['Aging Time (hrs)'])
-
+    surface_area = __ttcn__(row['Surface Area (m2/g)'])
     graph.evaluate(
 
         """
@@ -158,7 +158,8 @@ def gel(row):
         
         """, parameters={"id": gel_id, "annas_notes": annas_notes,
                          "ph_sol": ph_sol, "gelation_temp": gelation_temp, "gelation_pressure": gelation_pressure,
-                         "gelation_time": gelation_time, "aging_time": aging_time, "aging_temp": aging_temp}
+                         "gelation_time": gelation_time, "aging_time": aging_time, "aging_temp": aging_temp,
+                         "surface_area": surface_area}
 
     )
 
@@ -306,7 +307,9 @@ def gel(row):
     gelation_agent_conc = __ttcn__(row['Gelation Agent (M)'])
     if gelation_agents is not None:
         gelation_agents = gelation_agents.split(', ')
-
+        gelation_agent_name = gelation_agents[0]
+        if gelation_agent_name == "MSA":
+            gelation_agent_name = "mercaptosuccinic acid"
         if len(gelation_agents) == 1:
             graph.evaluate(
 
@@ -318,7 +321,7 @@ def gel(row):
                 MERGE (g)-[rel:uses_gelation_agent]->(a)
                     SET rel.gelation_agent_conc = $gelation_agent_conc
     
-                """, parameters={"id": gel_id, "gelation_agent": gelation_agents[0], "gelation_agent_conc": gelation_agent_conc}
+                """, parameters={"id": gel_id, "gelation_agent": gelation_agent_name, "gelation_agent_conc": gelation_agent_conc}
 
             )
 
