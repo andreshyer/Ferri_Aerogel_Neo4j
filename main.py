@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 from py2neo import Graph
 
@@ -23,12 +24,14 @@ def core_node(row):
     density = __ttcn__(row['Density (g/cm3)'])
     thermal_conductivity = __ttcn__(row['Thermal Conductivity (W/mK)'])
     core_notes = row['Notes']
+    heat_treatment_temp = __ttcn__(row['Sintering Temp (°C)'])
 
     graph.evaluate(
 
         """
         MERGE (a: Aerogel {id: $id})
-            ON CREATE SET a.final_product = $final_product, a.core_notes = $core_notes, a.surface_area = $surface_area
+            ON CREATE SET a.final_product = $final_product, a.core_notes = $core_notes, a.surface_area = $surface_area,
+                a.heat_treatment_temp = $heat_treatment_temp
                 
         MERGE (s: Synthesis {id: $id})
             ON CREATE SET s.name = "Synthesis"
@@ -41,7 +44,7 @@ def core_node(row):
         """, parameters={"id": gel_id, "final_product": final_product, "pore_volume": pore_volume,
                          "pore_size": pore_size, "nano_particle_size": nano_particle_size,
                          "surface_area": surface_area, "density": density, "thermal_conductivity": thermal_conductivity,
-                         "core_notes": core_notes}
+                         "core_notes": core_notes, "heat_treatment_temp": heat_treatment_temp}
     )
 
     porosity = row['Porosity']
@@ -143,14 +146,15 @@ def gel(row):
     aging_temp = __ttcn__(row['Aging Temp (°C)'])
     aging_time = __ttcn__(row['Aging Time (hrs)'])
     surface_area = __ttcn__(row['Surface Area (m2/g)'])
+    heat_treatment_temp = __ttcn__(row['Sintering Temp (°C)'])
     graph.evaluate(
 
         """
         MATCH (a:Synthesis {id: $id})
         
         MERGE (m:Gel {id: $id})
-            ON CREATE SET m.name = "Gel", m.surface_area = $surface_area
-            
+            ON CREATE SET m.name = "Gel", m.surface_area = $surface_area, m.heat_treatment_temp = $heat_treatment_temp
+                
         MERGE (a)-[g:uses_gel]->(m)
             SET g.annas_notes = $annas_notes, g.ph_sol = $ph_sol, g.gelation_temp = $gelation_temp,
                 g.gelation_pressure = $gelation_pressure, g.gelation_time = $gelation_time,
@@ -159,7 +163,7 @@ def gel(row):
         """, parameters={"id": gel_id, "annas_notes": annas_notes,
                          "ph_sol": ph_sol, "gelation_temp": gelation_temp, "gelation_pressure": gelation_pressure,
                          "gelation_time": gelation_time, "aging_time": aging_time, "aging_temp": aging_temp,
-                         "surface_area": surface_area}
+                         "surface_area": surface_area, "heat_treatment_temp": heat_treatment_temp}
 
     )
 
@@ -255,19 +259,35 @@ def gel(row):
 
         )
 
-    additional_solvents_precusors = row['Additional Solvents/DCCA/Precursors (non Zr)']
-    if additional_solvents_precusors is not None:
-        additional_solvents_precusors = additional_solvents_precusors.split(', ')
-        for additional_solvents_precusor in additional_solvents_precusors:
+    additional_solvents = row['Additional Solvents']
+    if additional_solvents is not None:
+        additional_solvents = additional_solvents.split(', ')
+        for additional_solvent in additional_solvents:
             graph.evaluate(
 
                 """
                 MATCH (g:Gel {id: $id})
     
-                MERGE (s:AdditionalSolventsAndPrecusors {name: $additional_solvents_precusors})
-                MERGE (g)-[:has_additional_solvent_percusor]->(s)
+                MERGE (s:GelSolvent {name: $additional_solvent})
+                MERGE (g)-[:has_additional_solvent]->(s)
     
-                """, parameters={"id": gel_id, "additional_solvents_precusors": additional_solvents_precusor}
+                """, parameters={"id": gel_id, "additional_solvent": additional_solvent}
+
+            )
+
+    non_zr_precursors = row['Additional Precursors (non Zr)']
+    if non_zr_precursors is not None:
+        non_zr_precursors = non_zr_precursors.split(', ')
+        for non_zr_precursor in non_zr_precursors:
+            graph.evaluate(
+
+                """
+                MATCH (g:Gel {id: $id})
+
+                MERGE (z:NonZrPrecursor {name: $non_zr_precursor})
+                MERGE (g)-[:has_additional_non_zr_precursor]->(z)
+
+                """, parameters={"id": gel_id, "non_zr_precursor": non_zr_precursor}
 
             )
 
@@ -516,8 +536,8 @@ def drying(row):
 def main():
     print("Inserting data into Neo4j...")
     df = pd.read_csv('Aerogel.csv')
-    df = df.where(pd.notnull(df), None)
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df = df.where(pd.notnull(df), None)
     rows = df.to_dict('records')
     for row in tqdm(rows):
         core_node(row)
@@ -526,6 +546,7 @@ def main():
         gel(row)
         washing_steps(row)
         drying(row)
+    print('Done')
 
 
 if __name__ == "__main__":

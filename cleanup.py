@@ -15,4 +15,5 @@ def cleanup(file):
     df.to_csv(file, index=False)
 
 
-cleanup("Aerogel.csv")
+if __name__ == "__main__":
+    cleanup("Aerogel.csv")
