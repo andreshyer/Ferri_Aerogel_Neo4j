@@ -3,6 +3,7 @@ import pandas as pd
 
 def cleanup(file):
     df = pd.read_csv(file)
+    df = df.dropna(how='all', axis=0)
     df['Index'] = df.index
     rows = []
     for index, row in df.iterrows():
@@ -16,4 +17,4 @@ def cleanup(file):
 
 
 if __name__ == "__main__":
-    cleanup("Aerogel.csv")
+    cleanup("si_aerogels.csv")

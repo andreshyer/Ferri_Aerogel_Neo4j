@@ -6,3 +6,5 @@ dependencies:
   - pandas
   - py2neo
   - tqdm
+  - xlrd
+  - openpyxl

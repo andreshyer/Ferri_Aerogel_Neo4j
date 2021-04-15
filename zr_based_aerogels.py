@@ -534,9 +534,9 @@ def drying(row):
 
 def main():
     print("Inserting data into Neo4j...")
-    df = pd.read_csv('Aerogel.csv')
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df = pd.read_csv('backends/zr_aerogels.csv')
     df = df.where(pd.notnull(df), None)
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
     rows = df.to_dict('records')
     for row in tqdm(rows):
         core_node(row)

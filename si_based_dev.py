@@ -351,8 +351,6 @@ class AerogelsToNeo4j:
             This next section defines the relationships between different the different nodes
             """
 
-            # TODO tack on properties
-
             tx = self.graph.begin()
 
             rel_props = dict()
