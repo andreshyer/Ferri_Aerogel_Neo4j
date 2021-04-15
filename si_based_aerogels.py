@@ -114,7 +114,6 @@ class AerogelsToNeo4j:
             # Define lit info Node
             lit_info_props = dict(
                 title=self.__ttcn__(row['Title']),
-                author=self.__ttcn__(row['Author']),
                 year=self.__ttcn__(row['Year']),
                 email=None,  # Wait to define email until received
                 citied_references=self.__ttcn__(row['Cited References (#)']),
@@ -122,6 +121,40 @@ class AerogelsToNeo4j:
             )
             lit_info = Node("LitInfo", **lit_info_props)
             self.graph.merge(lit_info, 'LitInfo', 'title')
+
+            def __parse_authors__(raw_authors, corresponding):
+                authors = []
+                if raw_authors:
+                    raw_authors = str(raw_authors).split(", ")
+                    for raw_author in raw_authors:
+                        rap = raw_author.split("(")
+                        if len(rap) == 2:
+                            author = rap[0]
+                            email = rap[1][:-1]
+                        else:
+                            author = raw_author
+                            email = None
+                        author_props = dict(
+                            name=author,
+                            email=email,
+                            corresponding_author=corresponding
+                        )
+                        author = Node("Author", **author_props)
+                        authors.append(author)
+                return authors
+
+            authors = []
+
+            # Define non-corresponding authors
+            raw_authors = self.__ttcn__(row['Authors'])
+            authors.extend(__parse_authors__(raw_authors, corresponding=False))
+
+            # Define corresponding authors
+            raw_authors = self.__ttcn__(row['Corresponding Author'])
+            authors.extend(__parse_authors__(raw_authors, corresponding=True))
+
+            for author in authors:
+                self.graph.merge(author, "Author", "name")
 
             # Define formation method
             formation_method_props = dict(
@@ -353,6 +386,10 @@ class AerogelsToNeo4j:
 
             tx = self.graph.begin()
 
+            for author in authors:
+                rel_props = dict()
+                tx.merge(Relationship(lit_info, "written_by", author, **rel_props))
+
             rel_props = dict()
             tx.merge(Relationship(final_gel, 'has', lit_info, **rel_props))
 
@@ -443,6 +480,7 @@ class AerogelsToNeo4j:
 
             tx.merge(Relationship(non_dried_gel, 'formation_by', formation_method))
 
+            # TODO add logic to connect sol to other nodes
             if sol_1:
                 tx.merge(Relationship(sol_1, 'mixed_into', non_dried_gel))
 
@@ -463,4 +501,5 @@ class AerogelsToNeo4j:
             tx.commit()
 
 
-AerogelsToNeo4j("backends/si_aerogels.csv")
+if __name__ == "__main__":
+    AerogelsToNeo4j("backends/si_aerogels.csv")

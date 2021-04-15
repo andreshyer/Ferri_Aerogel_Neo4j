@@ -193,7 +193,7 @@ def calculate_molarities(row):
 
 
 if __name__ == "__main__":
-    df = pd.read_excel('dev.xlsx')
+    df = pd.read_excel('molarity_inputs.xlsx')
     df = df.dropna(how='all', axis=0)
 
     new_rows = []
@@ -205,4 +205,4 @@ if __name__ == "__main__":
         new_rows.append(new_row)
 
     new_df = pd.DataFrame(new_rows)
-    new_df.to_excel('dev_export.xlsx', index=False)
+    new_df.to_excel('molarity_output.xlsx', index=False)
