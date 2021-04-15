@@ -1,15 +1,12 @@
 import pandas as pd
 from tqdm import tqdm
 
-from py2neo import Graph, Node, Relationship
+from py2neo import Graph, Node, Relationship, RelationshipMatcher
 
 
 class AerogelsToNeo4j:
 
-    def __init__(self, data):
-        port = 'bolt://localhost:7687'
-        username = 'Neo4j'
-        password = 'password'
+    def __init__(self, port, username, password, data):
         self.graph = Graph(port, username=username, password=password)
         self.data = pd.read_csv(data)
         self.__merge_data__()
@@ -407,6 +404,7 @@ class AerogelsToNeo4j:
                 rel_props = dict()
                 tx.merge(Relationship(final_gel, 'sintered_by', sintering, **rel_props))
 
+            # TODO fix this
             drying_temps = []
             for i in range(1, 5):
 
@@ -415,23 +413,40 @@ class AerogelsToNeo4j:
                     drying_temps.append(drying_temp)
 
                 if i < 3:
-                    rel_props = dict(
-                        step=i,
-                        drying_solvent=self.__ttcn__(row[f'Drying Solvent']),
-                        drying_temp=drying_temp,
-                        drying_time=self.__ttcn__(row[f'Drying Time {i} (hrs)']),
-                        drying_pressure=self.__ttcn__(row[f'Drying Pressure {i} (MPa)']),
-                        drying_atmosphere=self.__ttcn__(row[f'Drying Atmosphere {i}'])
-                    )
+                    values = [self.__ttcn__(row[f'Drying Solvent']), self.__ttcn__(row[f'Drying Time {i} (hrs)']),
+                              self.__ttcn__(row[f'Drying Pressure {i} (MPa)']),
+                              self.__ttcn__(row[f'Drying Atmosphere {i}'])]
+                    if any(values):
+                        rel_props = dict(
+                            step=i,
+                            drying_solvent=self.__ttcn__(row[f'Drying Solvent']),
+                            drying_temp=drying_temp,
+                            drying_time=self.__ttcn__(row[f'Drying Time {i} (hrs)']),
+                            drying_pressure=self.__ttcn__(row[f'Drying Pressure {i} (MPa)']),
+                            drying_atmosphere=self.__ttcn__(row[f'Drying Atmosphere {i}'])
+                        )
+                    else:
+                        rel_props = {}
                 else:
-                    rel_props = dict(
-                        step=i,
-                        drying_solvent=self.__ttcn__(row[f'Drying Solvent']),
-                        drying_temp=drying_temp,
-                        drying_time=self.__ttcn__(row[f'Drying Time {i} (hrs)']),
-                        drying_pressure=self.__ttcn__(row[f'Drying Pressure {i} (MPa)'])
-                    )
-                tx.merge(Relationship(final_gel, 'dried_by', drying_method, **rel_props))
+                    values = [self.__ttcn__(row[f'Drying Solvent']), self.__ttcn__(row[f'Drying Time {i} (hrs)']),
+                              self.__ttcn__(row[f'Drying Pressure {i} (MPa)'])]
+                    if any(values):
+                        rel_props = dict(
+                            step=i,
+                            drying_solvent=self.__ttcn__(row[f'Drying Solvent']),
+                            drying_temp=drying_temp,
+                            drying_time=self.__ttcn__(row[f'Drying Time {i} (hrs)']),
+                            drying_pressure=self.__ttcn__(row[f'Drying Pressure {i} (MPa)'])
+                        )
+                    else:
+                        rel_props = {}
+                rel_matcher = RelationshipMatcher(self.graph)
+                step_exists = False
+                for rel in rel_matcher.match(nodes=(final_gel, drying_method)).all():
+                    if i == dict(rel)['step']:
+                        step_exists = True
+                if not step_exists:
+                    tx.create(Relationship(final_gel, 'dried_by', drying_method, **rel_props))
 
             if drying_temps:
                 rel_props = dict(
@@ -502,4 +517,7 @@ class AerogelsToNeo4j:
 
 
 if __name__ == "__main__":
-    AerogelsToNeo4j("backends/si_aerogels.csv")
+    port = 'bolt://localhost:7687'
+    username = 'Neo4j'
+    password = 'password'
+    AerogelsToNeo4j(port, username, password, "backends/si_aerogels.csv")
