@@ -1,4 +1,4 @@
-name: far_test
+name: far
 channels:
   - defaults
   - conda-forge

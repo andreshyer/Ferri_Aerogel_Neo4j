@@ -442,9 +442,11 @@ class AerogelsToNeo4j:
                         rel_props = {}
                 rel_matcher = RelationshipMatcher(self.graph)
                 step_exists = False
-                for rel in rel_matcher.match(nodes=(final_gel, drying_method)).all():
-                    if i == dict(rel)['step']:
-                        step_exists = True
+                matches = rel_matcher.match(nodes=(final_gel, drying_method))
+                if matches.__dict__['_r_type']:
+                    for rel in matches.all():
+                        if i == dict(rel)['step']:
+                            step_exists = True
                 if not step_exists:
                     tx.create(Relationship(final_gel, 'dried_by', drying_method, **rel_props))
 
