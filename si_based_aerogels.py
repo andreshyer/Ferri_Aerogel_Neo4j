@@ -112,7 +112,6 @@ class AerogelsToNeo4j:
             lit_info_props = dict(
                 title=self.__ttcn__(row['Title']),
                 year=self.__ttcn__(row['Year']),
-                email=None,  # Wait to define email until received
                 citied_references=self.__ttcn__(row['Cited References (#)']),
                 timed_citied=self.__ttcn__(row['Times Cited (#)'])
             )
@@ -442,6 +441,8 @@ class AerogelsToNeo4j:
                         rel_props = {}
                 rel_matcher = RelationshipMatcher(self.graph)
                 step_exists = False
+
+                # TODO this just broke
                 matches = rel_matcher.match(nodes=(final_gel, drying_method))
                 if matches.__dict__['_r_type']:
                     for rel in matches.all():

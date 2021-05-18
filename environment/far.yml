@@ -8,3 +8,7 @@ dependencies:
   - tqdm
   - xlrd
   - openpyxl
+  - requests
+  - pip
+  - pip:
+      - neo4j==4.2.1
