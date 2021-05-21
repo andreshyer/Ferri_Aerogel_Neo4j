@@ -21,7 +21,17 @@ def main():
             - lit_info
         """
 
-        # TODO add logic to determine FinalGel type
+        # Define final gel
+        drying_method_str = row['Drying Method']
+        if drying_method_str == 'Supercritical Drying':
+            final_gel_type = 'Aerogel'
+        elif drying_method_str == 'Ambient Pressure Drying':
+            final_gel_type = 'Aerogel'
+        elif drying_method_str == 'Freeze Drying':  # Not ever used, but a holding value if comes up
+            final_gel_type = 'Aerogel'
+        else:
+            final_gel_type = 'Xerogel'
+
         final_gel = PseudoNode("FinalGel",
                                merge_props={'index': row['Index']},
                                general_props={'final_material': row['Final Material'],
@@ -33,10 +43,12 @@ def main():
                                               'bulk_density': row['Bulk Density (g/cm3)'],
                                               'thermal_conductivity': row['Thermal Conductivity (W/mK)'],
                                               'young_modulus': row['Young Modulus (MPa)'],
-                                              'drying_notes': row['Drying Notes']},
+                                              'drying_notes': row['Drying Notes'],
+                                              'type': final_gel_type},
                                unique_prop_keys=['index'])
         nodes.append(final_gel)
 
+        # Define non dried gel
         non_dried_gel = PseudoNode("NonDriedGel",
                                    merge_props={'index': row['Index']},
                                    general_props={'final_material': row['Final Material'],
@@ -53,11 +65,13 @@ def main():
                                    unique_prop_keys=['index'])
         nodes.append(non_dried_gel)
 
+        # define drying method
         drying_method = PseudoNode("DryingMethod",
                                    merge_props={'method': row['Drying Method']},
                                    unique_prop_keys=['method'])
         nodes.append(drying_method)
 
+        # lit info
         lit_info = PseudoNode("LitInfo",
                               merge_props={'title': row['Title']},
                               general_props={'year': row['Year'],
@@ -66,11 +80,13 @@ def main():
                               unique_prop_keys=['title'])
         nodes.append(lit_info)
 
+        # formation method
         formation_method = PseudoNode("FormationMethod",
                                       merge_props={'method': 'Formation Method'},
                                       unique_prop_keys=['method'])
         nodes.append(formation_method)
 
+        # authors
         def __parse_authors__(raw_authors: str, corresponding: bool):
             parsed_authors = []
             if raw_authors:
@@ -101,6 +117,7 @@ def main():
         authors.extend(corresponding_authors)
         nodes.extend(authors)
 
+        # crystalline phase
         crystalline_phase = None
         if row['Crystalline Phase']:
             crystalline_phase = PseudoNode("CrystallinePhase",
@@ -108,6 +125,7 @@ def main():
                                            unique_prop_keys=['name'])
             nodes.append(crystalline_phase)
 
+        # porosity
         porosity = None
         if row['Porosity']:
             porosity = PseudoNode("Porosity",
@@ -115,6 +133,7 @@ def main():
                                   unique_prop_keys=['name'])
             nodes.append(porosity)
 
+        # wash solvent 1
         wash_solvent_1 = None
         if row['Wash Solvent 1']:
             wash_solvent_1 = PseudoNode("Solvent",
@@ -122,6 +141,7 @@ def main():
                                         unique_prop_keys=['name'])
             nodes.append(wash_solvent_1)
 
+        # wash solvent 2
         wash_solvent_2 = None
         if row['Wash Solvent 2']:
             wash_solvent_2 = PseudoNode("Solvent",
@@ -129,6 +149,7 @@ def main():
                                         unique_prop_keys=['name'])
             nodes.append(wash_solvent_2)
 
+        # wash solvent 3
         wash_solvent_3 = None
         if row['Wash Solvent 3']:
             wash_solvent_3 = PseudoNode("Solvent",
@@ -136,6 +157,7 @@ def main():
                                         unique_prop_keys=['name'])
             nodes.append(wash_solvent_3)
 
+        # wash solvent 4
         wash_solvent_4 = None
         if row['Wash Solvent 4']:
             wash_solvent_4 = PseudoNode("Solvent",
@@ -143,6 +165,7 @@ def main():
                                         unique_prop_keys=['name'])
             nodes.append(wash_solvent_4)
 
+        # modifier
         modifier = None
         if row['Modifier']:
             modifier = PseudoNode("Modifier",
@@ -150,6 +173,7 @@ def main():
                                   unique_prop_keys=['name'])
             nodes.append(modifier)
 
+        # modifier solvent
         modifier_solvent = None
         if row['Modifier Solvent']:
             modifier_solvent = PseudoNode("Solvent",
@@ -157,6 +181,7 @@ def main():
                                           unique_prop_keys=['name'])
             nodes.append(modifier_solvent)
 
+        # sintering
         sintering = None
         sintering_props = dict(
             notes=row['Sintering Notes'],
@@ -170,6 +195,7 @@ def main():
                                    unique_prop_keys=['index'])
             nodes.append(sintering)
 
+        # sol 1
         sol_1 = None
         sol_1_props = dict(
             compontents=row['Sol 1'],
@@ -185,6 +211,7 @@ def main():
                                unique_prop_keys=['index'])
             nodes.append(sol_1)
 
+        # sol 2
         sol_2 = None
         sol_2_props = dict(
             compontents=row['Sol 2'],
