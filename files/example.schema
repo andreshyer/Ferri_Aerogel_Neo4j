@@ -1,0 +1,54 @@
+#V-0.01
+
+# This file is meant to act as an easy way to define nodes and relationships from a DataFrame into Neo4j
+# Use #'s to comment
+# As an example DataFrame
+
+#   first name last name hair color  age country   tip  lived in for years  clothing  clothing type
+# 0       Fred     Smith      brown   35     USA  1150                  35   Supreme         Hoodie
+# 1        Leo   Johnson     blonde   42     USA  1150                  42
+
+# With an example query normally needed to insert some of data about Fred. Where the tip is just a unique clue
+# where the info came from.
+
+# MERGE (a:Person {first_name: 'Fred', last_name: 'Smith'})
+#     ON CREATE SET a.hair_color = 'brown', a.age = 35
+# MERGE (b:Country {name: 'USA'})
+
+# MERGE (a)-[c:LivesIn {tip: 1150}]->(b)
+#     ON CREATE SET c.lived_in_for_years = 35
+
+# This can be rewritten in this file as
+
+Node|p|Person  # Define as node | node identifier (for relationships, can be blank if not used) | Node name
+    --first_name: first name  # Merge property
+    --last_name: last name *  # Unique property
+    -hair_color: hair color  # General property
+    -age: age  # Note how properties are formatted, <property key to insert into Neo4j>: <DataFrame column name>
+    -gen_value: {1}  # Use swirly brackets to hard code values in
+    -other_gen_value: {'upper'}
+
+Node|c|Country
+    --name: country
+
+Rel|p->c|LivesIn  # Define as relationship | node 1 direction ("->", "-") node 2 | relationship name
+    --tip: tip  # Star states that this property is unique
+    -lived_in_for_years: lived in for years
+
+# Something to note, while Neo4j does not demand that each node have a property to be merged on, this code does. It is
+# understandable that every node may not have a unique property to identify it. It is highly recommended that each node
+# have a unique property that always exist, as this will speed up the code significantly. But, if this is not the case
+# then a 'Index' property will be created. This will parse the index from the DataFrame and use that as a merge
+# property. Also, if all other properties except the Index are None (or blank), then the node will not be inserted into
+# Neo4j, nor any relationships to it.
+
+# Example Node with only Index as unique property.
+
+Node|cl|Clothing  # Note this will not be created for Leo
+    -name: clothing
+    -type: clothing type ! # Use ! to state that if this is the only non-None property, skip property
+
+Rel|p->cl|Wears  # Thus this relationships will not be merged for Leo
+
+# When creating schema files, avoid the use of #, -, !, |, {, }, and > in DataFrame column names. It is best practice in
+# general not to use special characters.
