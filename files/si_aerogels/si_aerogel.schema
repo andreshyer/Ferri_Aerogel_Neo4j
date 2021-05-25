@@ -1,5 +1,6 @@
 #V-0.01
 
+# To understand how this file is formatted, please see example.schema in files/other
 # Need to add type for final_gel, authors, and min/max temps for non_dried_final_gel rel
 
 # Core nodes

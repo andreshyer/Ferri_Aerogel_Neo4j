@@ -40,4 +40,4 @@ def cleanup_dataframe(df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    cleanup("../files/si_aerogels.csv")
+    cleanup("../files/si_aerogels/si_aerogels.csv")

@@ -7,6 +7,7 @@
 #   first name last name hair color  age country   tip  lived in for years  clothing  clothing type
 # 0       Fred     Smith      brown   35     USA  1150                  35   Supreme         Hoodie
 # 1        Leo   Johnson     blonde   42     USA  1150                  42
+# 2       John    Walker      brown   25      UK  1151                  23                    Shirt
 
 # With an example query normally needed to insert some of data about Fred. Where the tip is just a unique clue
 # where the info came from.
@@ -44,11 +45,11 @@ Rel|p->c|LivesIn  # Define as relationship | node 1 direction ("->", "-") node 2
 
 # Example Node with only Index as unique property.
 
-Node|cl|Clothing  # Note this will not be created for Leo
+Node|cl|Clothing  # Note this will not be created for Leo or John
     -name: clothing
-    -type: clothing type ! # Use ! to state that if this is the only non-None property, skip property
+    -type: clothing type ! # Use ! to state that if this is the only non-None property, dont create Node
 
-Rel|p->cl|Wears  # Thus this relationships will not be merged for Leo
+Rel|p->cl|Wears  # Thus this relationships will not be merged for Leo or John
 
 # When creating schema files, avoid the use of #, -, !, |, {, }, and > in DataFrame column names. It is best practice in
 # general not to use special characters.
