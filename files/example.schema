@@ -22,7 +22,7 @@
 
 Node|p|Person  # Define as node | node identifier (for relationships, can be blank if not used) | Node name
     --first_name: first name  # Merge property
-    --last_name: last name *  # Unique property
+    --last_name: last name *  # Unique property, unique properties are required to be merge properties
     -hair_color: hair color  # General property
     -age: age  # Note how properties are formatted, <property key to insert into Neo4j>: <DataFrame column name>
     -gen_value: {1}  # Use swirly brackets to hard code values in
