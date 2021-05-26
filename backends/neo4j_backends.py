@@ -427,7 +427,7 @@ def insert_from_schema(schema_file: str, df: DataFrame, uri: str = "bolt://local
             if line:
                 lines.append(line)
 
-    # If readable schema is empty, return None
+    # If readable schema is empty, do nothing
     if not lines:
         return
 

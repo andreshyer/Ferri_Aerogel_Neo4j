@@ -1,6 +1,6 @@
 #V-0.01
 
-# This file is meant to act as an easy way to define nodes and relationships from a DataFrame into Neo4j
+# This file format is meant to act as an easy way to define nodes and relationships from a DataFrame into Neo4j
 # Use #'s to comment
 # As an example DataFrame
 
@@ -9,7 +9,7 @@
 # 1        Leo   Johnson     blonde   42     USA  1150                  42
 # 2       John    Walker      brown   25      UK  1151                  23                    Shirt
 
-# With an example query normally needed to insert some of data about Fred. Where the tip is just a unique clue
+# With an example query normally needed to insert some of the data about Fred being, where the tip is just a unique clue
 # where the info came from.
 
 # MERGE (a:Person {first_name: 'Fred', last_name: 'Smith'})
@@ -21,18 +21,18 @@
 
 # This can be rewritten in this file as
 
-Node|p|Person  # Define as node | node identifier (for relationships, can be blank if not used) | Node name
-    --first_name: first name  # Merge property
+Node|p|Person  # Define as Node | node identifier | Node name
+    --first_name: first name  # Merge property, merge properties need to always be non-None
     --last_name: last name *  # Unique property, unique properties are required to be merge properties
     -hair_color: hair color  # General property
-    -age: age  # Note how properties are formatted, <property key to insert into Neo4j>: <DataFrame column name>
-    -gen_value: {1}  # Use swirly brackets to hard code values in
-    -other_gen_value: {'upper'}
+    -age: age
+    -gen_value: {1}  # Use swirly brackets to hard code values in, does not read any data from DataFrame
+    -other_gen_value: {'upper'}  # Can specify the variable type
 
 Node|c|Country
-    --name: country
+    --name: country  # Note how properties are formatted, <property key to insert into Neo4j>: <DataFrame column name>
 
-Rel|p->c|LivesIn  # Define as relationship | node 1 direction ("->", "-") node 2 | relationship name
+Rel|p->c|LivesIn  # Define as Relationship | node 1 direction ("->"" or "-") node 2 | Relationship name
     --tip: tip  # Star states that this property is unique
     -lived_in_for_years: lived in for years
 
