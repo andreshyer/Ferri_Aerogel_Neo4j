@@ -1,11 +1,10 @@
 import pandas as pd
 import requests
 import json
-import time
+from ast import literal_eval
 
 
 def fetch_density_molar_mass(compound):
-
     cached_compound_info = pd.read_csv('cached_compound_info.csv')
     if compound in cached_compound_info['compound'].tolist():
         values = cached_compound_info.loc[cached_compound_info['compound'] == compound].to_dict('records')[0]
@@ -18,6 +17,10 @@ def fetch_density_molar_mass(compound):
     # Fetch JSON data of compound
     response = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{cid}/JSON").text
     data = json.loads(response)
+    if isinstance(data, dict):
+        if 'Fault' in data.keys():
+            if data['Fault']['Code'] == 'PUGVIEW.BadRequest':
+                raise LookupError(f"Compound {compound} not found in PubChem, please manually enter")
 
     sections = data['Record']['Section']
 
@@ -50,7 +53,10 @@ def fetch_density_molar_mass(compound):
                         if property_type['TOCHeading'] == "Molecular Weight":
                             molar_mass_values = property_type['Information']
                             for molar_mass_value in molar_mass_values:
-                                molar_mass = molar_mass_value['Value']['Number'][0]
+                                try:
+                                    molar_mass = molar_mass_value['Value']['Number'][0]
+                                except KeyError:
+                                    molar_mass = float(molar_mass_value['Value']['StringWithMarkup'][0]['String'])
                                 break
                             break
 
@@ -62,14 +68,13 @@ def fetch_density_molar_mass(compound):
 
 
 def calculate_molarities(row):
-
     pore_volume = row['Pore Volume (cm3/g)']
     porosity = row['Porosity']
     if pore_volume == "----" or porosity == "----":
         return None
     pore_volume = float(pore_volume)
     porosity = float(porosity)
-    volume = pore_volume/porosity * 0.001  # Convert cc to L
+    volume = pore_volume / porosity * 0.001  # Convert cc to L
 
     raw_compounds = row['Material'].split(",")
     raw_compounds = [i.strip() for i in raw_compounds]
@@ -82,13 +87,19 @@ def calculate_molarities(row):
             return None
 
         molar_ratios = molar_ratios.split(",")
+
+        if len(molar_ratios) != len(raw_compounds):
+            print(f"\nNumber of molar ratios do not match the number of compounds"
+                  f"\n{row['Final Material']}")
+            return
+
         filtered_molar_ratios = []
         for i, molar_ratio in enumerate(molar_ratios):
             molar_ratio = molar_ratio.strip()
             if molar_ratio:
                 filtered_compounds.append(raw_compounds[i])
                 filtered_molar_ratios.append(float(molar_ratio))
-        molar_fractions = [i/sum(filtered_molar_ratios) for i in filtered_molar_ratios]
+        molar_fractions = [i / sum(filtered_molar_ratios) for i in filtered_molar_ratios]
 
         molecular_weights = []
         for compound in filtered_compounds:
@@ -162,6 +173,13 @@ def calculate_molarities(row):
             molarities.append(round(molarity, 3))
 
         compounds = dict(zip(filtered_compounds, molarities))
+
+        bad_compounds = []
+        for compound, molarity in compounds.items():
+            if str(molarity) == 'nan':
+                bad_compounds.append(compound)
+        for bad_compound in bad_compounds:
+            del compounds[bad_compound]
         return compounds
 
     elif row['Initial Mass Added (g)'] != "----":
@@ -192,17 +210,67 @@ def calculate_molarities(row):
     return None
 
 
-if __name__ == "__main__":
-    df = pd.read_excel('molarity_inputs.xlsx')
+def main():
+    df = pd.read_excel('KnowledgeGraphAlgorithm2017.xlsx')
     df = df.dropna(how='all', axis=0)
 
     new_rows = []
     for index, row in df.iterrows():
         row = dict(row)
-        new_row = {"Final Material": row['Final Sample']}
+        new_row = {"Final Material": row['Final Material']}
         molarities = calculate_molarities(row)
         new_row['calculated_molarities'] = molarities
         new_rows.append(new_row)
 
     new_df = pd.DataFrame(new_rows)
     new_df.to_excel('molarity_output.xlsx', index=False)
+
+
+def insert():
+    main_file = "../files/si_aerogels/si_aerogels.xlsx"
+    molarity_info_file = "KnowledgeGraphMolarityAlgorithm2020.xlsx"
+
+    molarity_info = pd.read_excel(molarity_info_file)
+    molarity_info = dict(zip(molarity_info['Final Material'], molarity_info['calculated_molarities']))
+
+    main_data: pd.DataFrame = pd.read_excel(main_file)
+
+    columns = {"Si Precursor": "Si Precursor Concentration (M)",
+               "Additional Si Co-Precursor(s)": "Si Co-Precursor Concentration (M)",
+               "Hybrid Aerogel Co-Precursor": "Co-Precursor Concentration (M)",
+               "Dopant": "Dopant Concentration (M)",
+               "Solvent 1": "Solvent 1 Concentration (M)",
+               "Solvent 2": "Solvent 2 Concentration (M)",
+               "Additional Solvents": "Additional Solvents Concentrations (M)",
+               "Acid Catalyst": "Acid Catalyst concentration in Sol(M)",
+               "Base Catalyst": "Base Catalyst concentration in Sol (M)",
+               "Modifier": "Modifier Concentration (M)",
+               "Modifier Solvent": "Modifier Solvent (M)",
+               "Surfactant": "Surfactant Concentration (M)"}
+
+    for index, row in main_data.iterrows():
+        row = dict(row)
+        if row['Final Material'] in molarity_info.keys():
+            molarities = molarity_info[row['Final Material']]
+            if str(molarities) != "nan":
+                molarities = molarities.replace("'", '"')
+                molarities = literal_eval(molarities)
+                for column in columns:
+                    molarity_string = ""
+                    compounds = str(row[column]).split(", ")  # Cast value first to string to catch numpy.nan's
+                    for compound in compounds:
+                        if compound != "----" and compound != "":
+                            if compound in molarities.keys():
+                                molarity = molarities[compound]
+                            else:
+                                molarity = "----"
+                            molarity_string += f"{molarity}, "
+                    if molarity_string:
+                        molarity_string = molarity_string[:-2]
+                        main_data.at[index, columns[column]] = molarity_string
+    main_data.to_excel(main_file, index=False)
+
+
+if __name__ == "__main__":
+    # main()
+    insert()

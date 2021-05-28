@@ -133,7 +133,7 @@ def pva_graph(pva, run_name):
 
 
 def main():
-    si_aerogel_file = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_machine_readable.csv")
+    si_aerogel_file = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv")
     state = None
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Thermal Conductivity (W/mK)',
@@ -142,13 +142,12 @@ def main():
 
     # Data processing
     all_data = read_csv(si_aerogel_file)
-    all_data = all_data.drop(drop_columns, axis=1)
-    all_data = all_data.dropna(how='any', subset=[y_column])
-    all_data = all_data.fillna(0)
-    all_data = get_dummies(all_data)
+    all_data = all_data.drop(drop_columns, axis=1)  # Remove other final gel properties
+    all_data = all_data.dropna(how='any', subset=[y_column])  # Drop rows that dont specify surface area
+    all_data = all_data.fillna(0)  # Replace blank spaces with 0
+    all_data = get_dummies(all_data)  # Replace words with dummy numbers
     y_column_max, y_column_min = all_data[y_column].max(), all_data[y_column].min()
-    all_data[y_column] = (all_data[y_column] - y_column_min) / (y_column_max - y_column_min)
-
+    all_data[y_column] = (all_data[y_column] - y_column_min) / (y_column_max - y_column_min)  # Scaled data
     all_data = shuffle(all_data, random_state=state)
 
     y = all_data[y_column]
@@ -163,7 +162,7 @@ def main():
     feature_importances = DataFrame()
     predicted_columns = []
     for i in range(100):
-        reg = RandomForestRegressor()
+        reg = MLPRegressor()
         reg.fit(x_train, y_train)
         y_predicted = reg.predict(x_test)
         predicted_column = f"predicted {i}"
@@ -177,7 +176,7 @@ def main():
 
     pva = (y_column_max - y_column_min) * pva + y_column_min
     pva_graph(pva, "unscaled_preliminary_results_nn_100_runs")
-    # feature_importances = feature_importances.mean(axis=1).to_numpy()
+    feature_importances = feature_importances.mean(axis=1).to_numpy()
     # impgraph(feature_importances, feature_list, "preliminary_results_rf_100_runs")
 
 

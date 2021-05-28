@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def cleanup(file):
-    df = pd.read_csv(file)
+    df = pd.read_excel(file)
     df = df.dropna(how='all', axis=0)
     df['Index'] = df.index
     rows = []
@@ -13,7 +13,7 @@ def cleanup(file):
                 row[item] = None
         rows.append(row)
     df = pd.DataFrame(rows)
-    df.to_csv(file, index=False)
+    df.to_excel(file, index=False)
 
 
 def cleanup_dataframe(df: pd.DataFrame):
@@ -40,4 +40,4 @@ def cleanup_dataframe(df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    cleanup("../files/si_aerogels/si_aerogels.csv")
+    cleanup("../files/si_aerogels/si_aerogels.xlsx")
