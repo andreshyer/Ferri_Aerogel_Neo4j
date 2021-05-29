@@ -22,18 +22,18 @@
 # This can be rewritten in this file as
 
 Node|p|Person  # Define as Node | node identifier | Node name
-    --first_name: first name  # Merge property, merge properties need to always be non-None
-    --last_name: last name *  # Unique property, unique properties are required to be merge properties
-    -hair_color: hair color  # General property
+    --first_name: first name  # -- means Merge property, merge properties need to always be non-None
+    --last_name: last name *  # * means Unique property, unique properties are required to be merge properties
+    -hair_color: hair color  # - means General property
     -age: age
     -gen_value: {1}  # Use swirly brackets to hard code values in, does not read any data from DataFrame
-    -other_gen_value: {'upper'}  # Can specify the variable type
+    -other_gen_value: {'upper'}  # Can specify the variable type as well in swirly brackets
 
 Node|c|Country
     --name: country  # Note how properties are formatted, <property key to insert into Neo4j>: <DataFrame column name>
 
 Rel|p->c|LivesIn  # Define as Relationship | node 1 direction ("->"" or "-") node 2 | Relationship name
-    --tip: tip  # Star states that this property is unique
+    --tip: tip *  # Can use
     -lived_in_for_years: lived in for years
 
 # Something to note, while Neo4j does not demand that each node have a property to be merged on, this code does. It is
@@ -46,10 +46,13 @@ Rel|p->c|LivesIn  # Define as Relationship | node 1 direction ("->"" or "-") nod
 # Example Node with only Index as unique property.
 
 Node|cl|Clothing  # Note this will not be created for Leo or John
-    -name: clothing
-    -type: clothing type ! # Use ! to state that if this is the only non-None property, dont create Node
+    --name: clothing
+    -type: clothing type ! # Use ! to state that if this is the only non-None property, dont create Node (doesnt work for Relationships)
 
 Rel|p->cl|Wears  # Thus this relationships will not be merged for Leo or John
 
 # When creating schema files, avoid the use of #, -, !, |, {, }, and > in DataFrame column names. It is best practice in
-# general not to use special characters.
+# general not to use special characters at all in DataFrame columns.
+
+# One last note, the property tags * and ! do not work for relationships, only Nodes. As Neo4j do not support
+# unique properties on relationship, and the ! tag does not make sense for relationships

@@ -1,6 +1,7 @@
 import string
 from tqdm import tqdm
 from warnings import warn
+from tqdm import tqdm
 from ast import literal_eval
 
 from pandas import DataFrame
@@ -346,12 +347,14 @@ class Gather:
         query = query.strip()
         return query
 
-    def merge(self, data: DataFrame = None):
+    def merge(self, data: DataFrame = None, batch: int = 1000):
         """
         This takes all the nodes and relationships passed into the Gather class, and merges them into Neo4j. If bulk
         was set to True for the nodes, then the pandas dataframe with data should be passed as well.
 
         :param data: DataFrame of data
+        :param batch: Number of rows to insert into Neo4j at one time when merging with bulk. Lower this number
+                        if RAM is an issue
         :return: None
         """
         # TODO limit the amount of rows being inserted when bulk inserting
@@ -362,6 +365,7 @@ class Gather:
         def __insert_data__(tx, query):
             tx.run(query, rows=rows)
 
+        # Verify params were pass correctly
         rows = None
         if isinstance(data, DataFrame):
             if not data.empty:
@@ -370,8 +374,25 @@ class Gather:
             raise Exception("bulk was set to true, but no data was passed")
 
         driver = GraphDatabase.driver(self.uri, auth=self.auth)
+
+        # Insert query if not bulk
+        if not self.bulk:
+            with driver.session() as session:
+                session.write_transaction(__insert_data__, self.query)
+            return
+
+        # Insert all data if bulk
+        i = 0
+        rows_to_merge = []
         with driver.session() as session:
-            session.write_transaction(__insert_data__, self.query)
+            for row in tqdm(rows, total=len(data), desc="Inserting data into Neo4j"):
+                rows_to_merge.append(row)
+                i += 1
+                if i == batch:
+                    session.write_transaction(__insert_data__, self.query)
+                    rows_to_merge = []
+            if rows_to_merge:
+                session.write_transaction(__insert_data__, self.query)
 
     def __apply_constraints__(self):
         """

@@ -6,20 +6,6 @@ from numpy import nan
 from neo4j_backends import insert_from_schema
 
 
-def schema_example():
-    rows = [{'first name': "Fred", 'last name': 'Smith', 'hair color': "brown", 'age': 35, 'country': 'USA',
-             'tip': 1150, 'lived in for years': 35, 'clothing': 'Supreme', 'clothing type': 'Hoodie'},
-            {'first name': "Leo", 'last name': 'Johnson', 'hair color': "blonde", 'age': 42, 'country': 'USA',
-             'tip': 1150, 'lived in for years': 42, 'clothing': '', 'clothing type': ''},
-            {'first name': "John", 'last name': 'Walker', 'hair color': "brown", 'age': 25, 'country': 'USA',
-             'tip': 1151, 'lived in for years': 23, 'clothing': '', 'clothing type': 'shirt'}
-            ]
-    data = pd.DataFrame(rows)
-
-    schema_file = str(Path(__file__).parent.parent / "files/other/example.schema")
-    insert_from_schema(schema_file=schema_file, df=data)
-
-
 if __name__ == "__main__":
     # schema_example()
 
