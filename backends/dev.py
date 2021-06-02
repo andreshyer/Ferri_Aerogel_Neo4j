@@ -3,8 +3,6 @@ from pathlib import Path
 from re import match
 from numpy import nan
 
-from neo4j_backends import insert_from_schema
-
 
 if __name__ == "__main__":
     # schema_example()
@@ -22,30 +20,32 @@ if __name__ == "__main__":
     #                 print(value)
     # df.to_csv(str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_machine_readable.csv"))
     #
-    for col in df.columns:
-        try:
-            df[col].astype(float)
-        except ValueError:
-            length = 1
-            for value in df[col].tolist():
-                if str(value).find(", ") != -1:
-                    if len(value.split(", ")) > length:
-                        length = len(value.split(", "))
-            if length > 1:
-                new_columns_values = []
-                for i in range(1, length+1):
-                    new_columns_values.append([])
-                for value in df[col].tolist():
-                    if str(value) == 'nan':
-                        split_values = [""] * length
-                    else:
-                        split_values = str(value).split(", ")
-                        split_values.extend([""] * (length - len(split_values)))
-                    for index, sub_value in enumerate(split_values):
-                        new_columns_values[index].append(sub_value)
-
-                for i in range(len(new_columns_values)):
-                    new_col_name = f"{col} <{i}>"
-                    df[new_col_name] = new_columns_values[i]
-                df = df.drop([col], axis=1)
-    df.to_csv(str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv"), index=False)
+    # for col in df.columns:
+    #
+    #     if col != "Final Material":
+    #         try:
+    #             df[col].astype(float)
+    #         except ValueError:
+    #             length = 1
+    #             for value in df[col].tolist():
+    #                 if str(value).find(", ") != -1:
+    #                     if len(value.split(", ")) > length:
+    #                         length = len(value.split(", "))
+    #             if length > 1:
+    #                 new_columns_values = []
+    #                 for i in range(1, length+1):
+    #                     new_columns_values.append([])
+    #                 for value in df[col].tolist():
+    #                     if str(value) == 'nan':
+    #                         split_values = [""] * length
+    #                     else:
+    #                         split_values = str(value).split(", ")
+    #                         split_values.extend([""] * (length - len(split_values)))
+    #                     for index, sub_value in enumerate(split_values):
+    #                         new_columns_values[index].append(sub_value)
+    #
+    #                 for i in range(len(new_columns_values)):
+    #                     new_col_name = f"{col} ({i})"
+    #                     df[new_col_name] = new_columns_values[i]
+    #                 df = df.drop([col], axis=1)
+    # df.to_csv(str(Path(__file__).parent.parent / "files/si_aerogels/dev.csv"), index=False)

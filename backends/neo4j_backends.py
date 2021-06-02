@@ -251,7 +251,10 @@ class Gather:
         # These are not true indexes, but rather letters are used to correlate nodes and relations in Neo4j Cypher
         self.__indexed_nodes__: dict[PseudoNode, str] = self.__index_nodes__()
         self.__indexed_relationships__: dict[PseudoRelationship, str] = self.__index_relationships__()
-        self.query: str = self.__generate_query__()
+        if self.bulk:
+            self.queries: str = self.__generate_bulk_query__()  # Just one query needed for bulk
+        else:
+            self.queries: list[str] = self.__generate_non_bulk_queries__()
 
     def __index_nodes__(self):
         indexes = {}
@@ -266,7 +269,7 @@ class Gather:
             indexes[relationship] = __convert_n_to_letters__(n)
         return indexes
 
-    def __generate_query__(self):
+    def __generate_bulk_query__(self):
         """
         This code is fairly difficult to follow on its own. The easiest way to show how this code works is by showing
         some examples.
@@ -310,10 +313,7 @@ class Gather:
         """
 
         # Generate query header
-        if self.bulk:
-            query = "UNWIND $rows as row\n"
-        else:
-            query = ""
+        query = "UNWIND $rows as row\n"
 
         # Generate node section
         for node in self.nodes:
@@ -347,6 +347,45 @@ class Gather:
         query = query.strip()
         return query
 
+    def __generate_non_bulk_queries__(self):
+
+        queries = []
+
+        for node in self.nodes:
+            merge_props_str = __format_merge_props__(node.merge_props_dict, self.bulk, class_type='Node')
+            query = f"\nMERGE ({self.__indexed_nodes__[node]}:{node.node_name}{merge_props_str})"
+            general_props_str = __format_general_props__(self.__indexed_nodes__[node],
+                                                         node.general_props_dict, self.bulk)
+            if general_props_str:
+                query += f"\n    {general_props_str}"
+            queries.append(query)
+
+        for rel in self.relationships:
+            rel_id = self.__indexed_relationships__[rel]
+            merge_props_str = __format_merge_props__(rel.merge_props_dict, self.bulk, class_type='Relationship')
+            general_props_str = __format_general_props__(rel_id, rel.general_props_dict, self.bulk)
+            rel_name = rel.rel_name
+
+            rel = rel.__rel__
+            direction = rel[2]
+            node_1_id = self.__indexed_nodes__[rel[0]]
+            node_1_name = rel[0].node_name
+            node_1_merge_props = __format_merge_props__(rel[0].merge_props_dict, self.bulk, class_type='Node')
+            node_2_id = self.__indexed_nodes__[rel[1]]
+            node_2_name = rel[1].node_name
+            node_2_merge_props = __format_merge_props__(rel[1].merge_props_dict, self.bulk, class_type='Node')
+
+            query = f"""
+            MATCH ({node_1_id}: {node_1_name}{node_1_merge_props})
+            MATCH ({node_2_id}: {node_2_name}{node_2_merge_props})
+            
+            MERGE ({node_1_id})-[{rel_id}: {rel_name}{merge_props_str}]-{direction}({node_2_id})
+            {general_props_str}
+            """
+            queries.append(query)
+
+        return queries
+
     def merge(self, data: DataFrame = None, batch: int = 1000):
         """
         This takes all the nodes and relationships passed into the Gather class, and merges them into Neo4j. If bulk
@@ -369,16 +408,17 @@ class Gather:
         rows = None
         if isinstance(data, DataFrame):
             if not data.empty:
-                rows = data.to_dict('records')
-        if self.bulk and not isinstance(data, DataFrame):
+                data = data.to_dict('records')
+        if self.bulk and not data:
             raise Exception("bulk was set to true, but no data was passed")
 
         driver = GraphDatabase.driver(self.uri, auth=self.auth)
 
-        # Insert query if not bulk
+        # Insert queries if not bulk
         if not self.bulk:
             with driver.session() as session:
-                session.write_transaction(__insert_data__, self.query)
+                for query in self.queries:
+                    session.write_transaction(__insert_data__, query)
             return
 
         # Insert all data if bulk
@@ -388,11 +428,12 @@ class Gather:
             for row in tqdm(rows, total=len(data), desc="Inserting data into Neo4j"):
                 rows_to_merge.append(row)
                 i += 1
-                if i == batch:
-                    session.write_transaction(__insert_data__, self.query)
+                if i % batch == 0:
+                    session.write_transaction(__insert_data__, self.queries)
                     rows_to_merge = []
+                    i = 0
             if rows_to_merge:
-                session.write_transaction(__insert_data__, self.query)
+                session.write_transaction(__insert_data__, self.queries)
 
     def __apply_constraints__(self):
         """
@@ -417,170 +458,3 @@ class Gather:
                         CREATE CONSTRAINT IF NOT EXISTS ON (n:{node.node_name}) ASSERT n.{unique_prop_key} IS UNIQUE
                         """.strip()
                         session.write_transaction(__insert_constraint__)
-
-
-def insert_from_schema(schema_file: str, df: DataFrame, uri: str = "bolt://localhost:7687",
-                       auth: tuple = ("neo4j", "password"), apply_constraints: bool = True,
-                       force_non_bulk: bool = False):
-    """
-    The purpose of this code is to take a schema file and DataFrame and insert the information into Neo4j. The code
-    for this does not make sense outside of the context of example.schema. The file can be found under files and
-    explains the logic. This code matches that logic from the schema file.
-
-    :param schema_file: Schema that defines nodes and relationships
-    :param df: DataFrame with data that corresponds to schema file
-    :param uri: uri to the Neo4j graph, recommended bolt connection
-    :param auth: auth tuple, default ("neo4j", "password")
-    :param apply_constraints: bool to decide if constraints should be applied to nodes and relationships
-    :param force_non_bulk: Force each row to be inserted without bulk insert
-    :return: None
-    """
-    # TODO look for errors in schema file
-    # TODO implement logic for ! in schema files
-
-    # Grab only significant lines, drop all comments
-    lines = []
-    with open(schema_file, 'r') as file:
-        for line in file:
-            if line.find("#") != -1:
-                line = line.split("#")[0]
-            line = line.strip()
-            if line:
-                lines.append(line)
-
-    # If readable schema is empty, do nothing
-    if not lines:
-        return
-
-    # Group lines into Nodes and Relationships
-    list_of_separated_lines: list[list[str]] = []
-    separated_lines: list[str] = []
-    for line in lines:
-        if line.find("|") != -1:
-            list_of_separated_lines.append(separated_lines)
-            separated_lines = [line]
-        else:
-            separated_lines.append(line)
-    list_of_separated_lines.append(separated_lines)
-    list_of_separated_lines.pop(0)  # First list always is blank
-
-    # Parse info in separated lines
-    schema_nodes = []
-    schema_relationships = []
-    for separated_lines in list_of_separated_lines:
-        merge_props = {}
-        general_props = {}
-        unique_keys = []
-        header = separated_lines[0]  # First line in separated lines is always header line
-        entity_type = header.split("|")[0].strip()
-        entity_id = header.split("|")[1].strip()  # If relationship, this is relationship details
-        entity_name = header.split("|")[2].strip()
-        for i in range(1, len(separated_lines)):  # Gather properties, start at next line after header
-            separated_line = separated_lines[i]
-            if separated_line.find("--") != -1:  # Merge property
-                if separated_line.strip()[-1] == "*":
-                    separated_line = separated_line.strip("*")[:-1].strip()
-                    unique_keys.append(separated_line.split(":")[0].split("--")[1].strip())
-                separated_line = separated_line.split("--")[1]
-                merge_props[separated_line.split(":")[0].strip()] = separated_line.split(":")[1].strip()
-            else:
-                separated_line = separated_line.split("-")[1]  # General property
-                general_props[separated_line.split(":")[0].strip()] = separated_line.split(":")[1].strip()
-        if entity_type == 'Node':
-            schema_nodes.append({"id": entity_id, "node_name": entity_name, "merge_props": merge_props,
-                                 "general_props": general_props, "unique_keys": unique_keys})
-        elif entity_type == 'Rel':  # Relationships need a bit more work
-            if entity_id.find("->") != -1:  # Relationships dont have an id, parse info from this section
-                direction = "->"
-                node_1 = entity_id.split("->")[0].strip()
-                node_2 = entity_id.split("->")[1].strip()
-            else:
-                direction = "-"
-                node_1 = entity_id.split("-")[0].strip()
-                node_2 = entity_id.split("-")[1].strip()
-            schema_relationships.append({"rel_name": entity_name, "node_1": node_1, "direction": direction,
-                                         "node_2": node_2, "merge_props": merge_props, "general_props": general_props})
-
-    # check if nodes and relationships can be inserted in bulk
-    if force_non_bulk:
-        bulk = False
-    else:
-        bulk = True
-        for schema_node in schema_nodes:
-            if not schema_node['merge_props']:
-                bulk = False
-
-    # Insert data as bulk if possible, requires all nodes to have a unique key
-    if bulk:
-        node_key = {}
-        nodes = []
-        rels = []
-        for schema_node in schema_nodes:
-            node = PseudoNode(schema_node['node_name'], merge_props=schema_node['merge_props'],
-                              general_props=schema_node['general_props'], unique_prop_keys=schema_node['unique_keys'])
-            nodes.append(node)
-            node_key[schema_node['id']] = node
-        for rel in schema_relationships:
-            rel = PseudoRelationship(rel['rel_name'], node_key[rel['node_1']], rel['direction'],
-                                     node_key[rel['node_2']], merge_props=rel['merge_props'],
-                                     general_props=rel['general_props'])
-            rels.append(rel)
-        gathered = Gather(nodes, rels, bulk=True, uri=uri, auth=auth, apply_constraints=apply_constraints)
-        gathered.merge(df)
-
-    # If cannot insert data as bulk, insert data one row at a time (much, much slower)
-    # Data is parsed from each row, and a query is generated that is inserted into Neo4j
-    else:
-
-        # Helper function to replace key values with actual values from dataframe
-        def rvip(prop_dict, row_data):  # replace values in prop dict
-            new_prop_dict = {}
-            for key, value in prop_dict.items():
-                if value[0] == "{" and value[-1] == "}":
-                    value = value[1:-1]
-                    value = literal_eval(value)
-                    new_prop_dict[key] = value
-                else:
-                    value = row_data[value]
-                    if str(value) == "nan":
-                        value = None
-                    new_prop_dict[key] = value
-            return new_prop_dict
-
-        index_column = df.index.values.tolist()
-        df['index'] = index_column  # Create column with indexes
-        for row in tqdm(df.to_dict('records'), total=len(df), desc="Inserting data into Neo4j"):
-            node_key = {}
-            nodes = []
-            rels = []
-
-            # Insert nodes
-            for schema_node in schema_nodes:
-                merge_props = __drop_none_prop_values__(rvip(schema_node['merge_props'], row), supress_warning=True)
-                general_props = __drop_none_prop_values__(rvip(schema_node['general_props'], row), supress_warning=True)
-
-                # Make sure to only add index to merge props if general_props
-                if not merge_props and general_props:
-                    merge_props['index'] = row['index']
-                    schema_node['unique_keys'].append('index')
-
-                if merge_props or general_props:
-                    node = PseudoNode(schema_node['node_name'], merge_props=merge_props,
-                                      general_props=general_props,
-                                      unique_prop_keys=schema_node['unique_keys'])
-                    nodes.append(node)
-                    node_key[schema_node['id']] = node
-
-            # Insert relationships
-            for rel in schema_relationships:
-                merge_props = __drop_none_prop_values__(rvip(rel['merge_props'], row),
-                                                        supress_warning=True)
-                general_props = __drop_none_prop_values__(rvip(rel['general_props'], row),
-                                                          supress_warning=True)
-                if rel['node_1'] in node_key.keys() and rel['node_2'] in node_key.keys():
-                    rel = PseudoRelationship(rel['rel_name'], node_key[rel['node_1']], rel['direction'],
-                                             node_key[rel['node_2']], merge_props=merge_props,
-                                             general_props=general_props)
-                    rels.append(rel)
-            gathered = Gather(nodes, rels, bulk=False, uri=uri, auth=auth, apply_constraints=apply_constraints)
-            gathered.merge()

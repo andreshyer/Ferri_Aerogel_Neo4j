@@ -155,7 +155,7 @@ def main():
 
     feature_list = x.columns.tolist()
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=state)
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, train_size=0.875, random_state=state)
+    # x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, train_size=0.875, random_state=state)
 
     pva = DataFrame({"actual": y_test})
 

@@ -1,14 +1,14 @@
 from pandas import read_csv
 
-from backends.neo4j_backends import insert_from_schema
+from backends import ReadSchema
 
 
 if __name__ == "__main__":
     port = 'bolt://localhost:7687'
     username = 'neo4j'
     password = 'password'
-    df = read_csv('files/si_aerogels/si_aerogels.csv')
-    schema = "files/si_aerogels/si_aerogel.schema"
+    df = read_csv('files/si_aerogels/si_aerogel_machine_readable.csv')
+    schema = "files/si_aerogels/si_aerogel_schema.schema"
 
-    insert_from_schema(schema_file=schema, df=df, uri=port,
-                       auth=(username, password), apply_constraints=True)
+    schema_obj = ReadSchema(schema_file=schema)
+    schema_obj.merge(df=df, uri=port, auth=(username, password), apply_constraints=False, bulk=False)
