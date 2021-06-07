@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -46,6 +47,7 @@ def impgraph(feature_importances, feature_list: list, run_name: str):
     varimp = DataFrame([], columns=['variable', 'importance'])
     varimp['variable'] = [feature_list[i] for i in indicies]
     varimp['importance'] = importances2[indicies]
+    varimp.to_csv("importances.csv")
     # Importance Bar Graph
     plt.rcParams['figure.figsize'] = [15, 20]
 
@@ -137,7 +139,7 @@ def main():
     state = None
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Thermal Conductivity (W/mK)',
-                    'Crystalline Phase', 'Nanoparticle Size (nm)']
+                    'Crystalline Phase', 'Nanoparticle Size (nm)', 'Average Pore Size (nm)']
     y_column = 'Surface Area (m2/g)'
 
     # Data processing
@@ -161,23 +163,23 @@ def main():
 
     feature_importances = DataFrame()
     predicted_columns = []
-    for i in range(100):
-        reg = MLPRegressor()
+    for i in tqdm(range(100)):
+        reg = RandomForestRegressor()
         reg.fit(x_train, y_train)
         y_predicted = reg.predict(x_test)
         predicted_column = f"predicted {i}"
         pva[predicted_column] = y_predicted
         predicted_columns.append(predicted_column)
-        # feature_importances[predicted_column] = reg.feature_importances_
+        feature_importances[predicted_column] = reg.feature_importances_
 
     pva['pred_avg'] = pva[predicted_columns].mean(axis=1)
     pva['pred_std'] = pva[predicted_columns].std(axis=1)
-    pva_graph(pva, "scaled_preliminary_results_nn_100_runs")
+    pva_graph(pva, "scaled_preliminary_results_rf_100_runs")
 
     pva = (y_column_max - y_column_min) * pva + y_column_min
-    pva_graph(pva, "unscaled_preliminary_results_nn_100_runs")
+    pva_graph(pva, "unscaled_preliminary_results_rf_100_runs")
     feature_importances = feature_importances.mean(axis=1).to_numpy()
-    # impgraph(feature_importances, feature_list, "preliminary_results_rf_100_runs")
+    impgraph(feature_importances, feature_list, "preliminary_results_rf_100_runs")
 
 
 if __name__ == "__main__":
