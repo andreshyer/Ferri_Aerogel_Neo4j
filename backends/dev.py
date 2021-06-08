@@ -1,16 +1,52 @@
 import pandas as pd
+import requests
+import json
+from ast import literal_eval
 from pathlib import Path
 from re import match
 from numpy import nan
+from tqdm import tqdm
 
 
 if __name__ == "__main__":
+    """
+    Baldy coded stuff just to help format the data files into machine readable files
+    """
+
     # schema_example()
 
-    # Baldy coded stuff just to help format the data files into machine readable files
-    data_file = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_machine_readable.csv")
-    df: pd.DataFrame = pd.read_csv(data_file)
-    df = df.dropna(axis=1, how="all")
+    # cached_compound_info = pd.read_csv('cached_compound_info.csv')
+    # cached_compound_info['smiles'] = ""
+    #
+    # for index, row in tqdm(cached_compound_info.iterrows()):
+    #     compound = row['compound']
+    #     cid = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{compound}/cids/TXT").text
+    #     cid = cid.split()[0]
+    #
+    #     # Fetch JSON data of compound
+    #     response = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{cid}/JSON").text
+    #     data = json.loads(response)
+    #     with open('dev.json', "w") as f:
+    #         json.dump(data, f, indent=6)
+    #
+    #     if isinstance(data, dict):
+    #         if 'Fault' in data.keys():
+    #             pass
+    #         else:
+    #             sections = data['Record']['Section']
+    #             for section in sections:
+    #                 if section['TOCHeading'] == "Names and Identifiers":
+    #                     section = section['Section']
+    #                     for subsection in section:
+    #                         if subsection['TOCHeading'] == "Computed Descriptors":
+    #                             smiles = subsection['Section'][3]['Information'][0]['Value']
+    #                             smiles = smiles['StringWithMarkup'][0]['String']
+    #                             cached_compound_info.at[index, 'smiles'] = smiles
+    #         cached_compound_info.to_csv('dev.csv')
+
+    # data_file = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_machine_readable.csv")
+    # df: pd.DataFrame = pd.read_csv(data_file)
+    # df = df.dropna(axis=1, how="all")
 
     # for index, row in df.iterrows():
     #     row = dict(row)
