@@ -56,12 +56,6 @@ class DataHolder:
     def replace_nan_with_zeros(self):
         self.df = self.df.fillna(0)  # Replace blank spaces with 0
 
-    @ staticmethod
-    def replace_words_with_numbers():
-        df = pd.read_csv("dev.csv")
-        df = df.dropna(axis=0, how='all')
-        df.to_csv("dev.csv", index=False)
-
     def __do_split__(self, x, y, len_total, train_percent, test_percent, val_percent):
 
         len_train = len_total * train_percent
@@ -152,5 +146,4 @@ if __name__ == "__main__":
     holder = DataHolder(df=data, y=y_columns, columns_to_drop=drop_columns, grouping_column=paper_id_column,
                         train_percent=0.80, test_percent=0.20, val_percent=0)
     holder.replace_nan_with_zeros()
-    holder.replace_words_with_numbers()
-    # holder.split_data()
+    holder.split_data()
