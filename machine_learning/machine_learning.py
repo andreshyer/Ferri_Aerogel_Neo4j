@@ -1,4 +1,6 @@
 from pathlib import Path
+from datetime import datetime
+from os import mkdir, path
 
 from tqdm import tqdm
 import numpy as np
@@ -47,7 +49,7 @@ def impgraph(feature_importances, feature_list: list, run_name: str):
     varimp = DataFrame([], columns=['variable', 'importance'])
     varimp['variable'] = [feature_list[i] for i in indicies]
     varimp['importance'] = importances2[indicies]
-    varimp.to_csv("importances.csv")
+    varimp.to_csv(f"{run_name}/importance.csv")
     # Importance Bar Graph
     plt.rcParams['figure.figsize'] = [15, 20]
 
@@ -69,7 +71,7 @@ def impgraph(feature_importances, feature_list: list, run_name: str):
     # ax = plt.axes()
     ax.xaxis.grid(False)  # remove just xaxis grid
 
-    plt.savefig(run_name + '_importance-graph.png')
+    plt.savefig(run_name + '/importance_graph.png')
     plt.close()
 
 
@@ -133,53 +135,97 @@ def pva_graph(pva, run_name):
 #         'bootstrap': Categorical([True, False])
 #     }
 
+def replace_words_with_numbers(df: DataFrame):
+    keywords = [0]
+
+    for column in df:
+        if df[column].dtype == "object":
+            keywords.extend(df[column].unique())
+    keywords = set(keywords)
+    keywords = dict(zip(keywords, range(len(keywords))))
+    df = df.replace(keywords)
+    return df
+
 
 def main():
     si_aerogel_file = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv")
     state = None
-    drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Thermal Conductivity (W/mK)',
-                    'Crystalline Phase', 'Nanoparticle Size (nm)', 'Average Pore Size (nm)']
-    y_column = 'Surface Area (m2/g)'
+    # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
+    #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Thermal Conductivity (W/mK)',
+    #                 'Crystalline Phase', 'Nanoparticle Size (nm)', 'Average Pore Size (nm)', 'Surface Area (m2/g)']
+    drop_columns = []
+    y_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
+                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Thermal Conductivity (W/mK)',
+                 'Crystalline Phase', 'Nanoparticle Size (nm)', 'Average Pore Size (nm)', 'Surface Area (m2/g)']
+    only_columns = []
+    model = "random_forest"
+    # model = "neural_network"
 
     # Data processing
     all_data = read_csv(si_aerogel_file)
     all_data = all_data.drop(drop_columns, axis=1)  # Remove other final gel properties
-    all_data = all_data.dropna(how='any', subset=[y_column])  # Drop rows that dont specify surface area
     all_data = all_data.fillna(0)  # Replace blank spaces with 0
-    all_data = get_dummies(all_data)  # Replace words with dummy numbers
-    y_column_max, y_column_min = all_data[y_column].max(), all_data[y_column].min()
-    all_data[y_column] = (all_data[y_column] - y_column_min) / (y_column_max - y_column_min)  # Scaled data
+    all_data = replace_words_with_numbers(all_data)  # Replace words with dummy numbers
     all_data = shuffle(all_data, random_state=state)
+    all_data.to_csv('dev.csv')
+    actual = all_data[y_columns]
+    all_data = all_data.dropna(how='any', subset=y_columns)  # Drop rows that dont specify surface area
+    # for y_column in y_columns:
+    #     y_column_max, y_column_min = all_data[y_column].max(), all_data[y_column].min()
+    #     all_data[y_column] = (all_data[y_column] - y_column_min) / (y_column_max - y_column_min)  # Scaled data
 
-    y = all_data[y_column]
-    x = all_data.drop([y_column], axis=1)
+    y = all_data[y_columns]
+    x = all_data.drop(y_columns, axis=1)
 
     feature_list = x.columns.tolist()
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=state)
     # x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, train_size=0.875, random_state=state)
 
-    pva = DataFrame({"actual": y_test})
+    now = datetime.now()
+    if model == "random_forest":
+        feature_importances = DataFrame()
+        run_name = "random_forest" + now.strftime("%d_%m_%Y_%H_%M_%S")
+    else:
+        feature_importances = None
+        run_name = "neural_network" + now.strftime("%d_%m_%Y_%H_%M_%S")
 
-    feature_importances = DataFrame()
+    if not path.exists('output'):
+        mkdir('output')
+    output_dir = f'output/{run_name}'
+    mkdir(output_dir)
+
     predicted_columns = []
-    for i in tqdm(range(100)):
-        reg = RandomForestRegressor()
+    error_pvas = []
+    for i in tqdm(range(5)):
+        if model == "random_forest":
+            reg = RandomForestRegressor()
+        else:
+            reg = MLPRegressor()
         reg.fit(x_train, y_train)
         y_predicted = reg.predict(x_test)
-        predicted_column = f"predicted {i}"
-        pva[predicted_column] = y_predicted
-        predicted_columns.append(predicted_column)
-        feature_importances[predicted_column] = reg.feature_importances_
+        predicted_df = DataFrame(y_predicted, columns=actual.columns.tolist())
+        error_pva = (actual - predicted_df)**2
+        error_pvas.append(error_pva)
+        # pva[predicted_column] = y_predicted
+        # predicted_columns.append(predicted_column)
+        # if isinstance(feature_importances, DataFrame):
+        #     feature_importances[predicted_column] = reg.feature_importances_
 
-    pva['pred_avg'] = pva[predicted_columns].mean(axis=1)
-    pva['pred_std'] = pva[predicted_columns].std(axis=1)
-    pva_graph(pva, "scaled_preliminary_results_rf_100_runs")
+    rmse_pva = DataFrame()
+    for error_pva in error_pvas:
+        rmse_pva = rmse_pva + error_pva
+    print(rmse_pva)
 
-    pva = (y_column_max - y_column_min) * pva + y_column_min
-    pva_graph(pva, "unscaled_preliminary_results_rf_100_runs")
-    feature_importances = feature_importances.mean(axis=1).to_numpy()
-    impgraph(feature_importances, feature_list, "preliminary_results_rf_100_runs")
+    # pva['pred_avg'] = pva[predicted_columns].mean(axis=1)
+    # pva['pred_std'] = pva[predicted_columns].std(axis=1)
+    # pva_graph(pva, f"{output_dir}/scaled")
+    #
+    # pva = (y_column_max - y_column_min) * pva + y_column_min
+    # pva_graph(pva, f"{output_dir}/unscaled")
+    #
+    # if isinstance(feature_importances, DataFrame):
+    #     feature_importances = feature_importances.mean(axis=1).to_numpy()
+    #     impgraph(feature_importances, feature_list, output_dir)
 
 
 if __name__ == "__main__":
