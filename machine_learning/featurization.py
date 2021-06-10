@@ -4,8 +4,10 @@ from tqdm import tqdm
 from random import randint
 
 import pandas as pd
+from numpy import ndarray
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
+from descriptastorus.descriptors.DescriptorGenerator import MakeGenerator
 
 
 class DataHolder:
@@ -14,6 +16,7 @@ class DataHolder:
                  train_percent: float, test_percent: float, val_percent: float = None,
                  grouping_column: str = None, columns_to_drop: Union[list[str], str] = None,
                  state: int = None):
+
         # Gather data
         self.raw_df: pd.DataFrame = df
         self.grouping_column: str = grouping_column
@@ -136,18 +139,12 @@ class DataHolder:
             testing = self.df.loc[self.df['row_type'] == "test"].drop(['row_type', self.grouping_column], axis=1)
             training = self.df.loc[self.df['row_type'] == "train"].drop(['row_type', self.grouping_column], axis=1)
 
-            def reshape(cols):  # Test if dataframe only has one column, if so return a series with info
-                if len(cols.columns) == 1:
-                    return cols.squeeze()
-                else:
-                    return cols
-
             # Split the sets into testing and training data
             x_test, y_test = testing.drop(y_columns, axis=1), testing[y_columns]
             x_train, y_train = training.drop(y_columns, axis=1), training[y_columns]
 
             # Do the same for val set if the val percent is more than 0
-            if val_ids:
+            if isinstance(val_ids, ndarray):  # If val_ids is not None
                 val_ids = list(val_ids)
                 val = self.df.loc[self.df['row_type'] == "val"].drop(['row_type', self.grouping_column], axis=1)
                 x_val, y_val = val.drop(y_columns, axis=1), val[y_columns]
@@ -168,10 +165,19 @@ class DataHolder:
         # Reshape the data
         x_test, y_test = reshape(x_test), reshape(y_test)
         x_train, y_train = reshape(x_train), reshape(y_train)
-        if x_val:
+        if isinstance(x_val, pd.DataFrame):  # If x_val is not None
             x_val, y_val = reshape(x_val), reshape(y_val)
 
         return x_test, x_train, x_val, y_test, y_train, y_val
+
+    def featurize_molecules(self):
+        raw_df = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
+        raw_df = pd.read_csv(raw_df)
+        print(raw_df)
+
+        generator = MakeGenerator(("rdkit2d",))
+        data = generator.process(smiles="c1ccccc1")
+        print(data)
 
     def use_only_important_columns(self, number_of_models=100, threshold=0.01):
         # Gather the base sets, this is done just to avoid weird errors, like if the user passes in 0 here.
@@ -233,8 +239,9 @@ if __name__ == "__main__":
                     'Average Pore Size (nm)']
     paper_id_column = "paper_id"
     holder = DataHolder(df=data, y=y_columns, columns_to_drop=drop_columns, grouping_column=paper_id_column,
-                        train_percent=0.80, test_percent=0.20, val_percent=0)
+                        train_percent=0.70, test_percent=0.20, val_percent=0.1)
     holder.replace_nan_with_zeros()
     holder.replace_words_with_numbers()
-    holder.use_only_important_columns(number_of_models=100)
+    holder.featurize_molecules()
+    # holder.use_only_important_columns(number_of_models=100)
     # holder.split_data()

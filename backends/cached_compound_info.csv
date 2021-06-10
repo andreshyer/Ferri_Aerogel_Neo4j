@@ -30,17 +30,14 @@ CTAB,,364.4,5974,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Br-]
 Na2SiO3,1.1,122.063,23266,[O-][Si](=O)[O-].[Na+].[Na+]
 Isopropanol,0.785,60.1,3776,CC(C)O
 Aluminum Isopropoxide,1.025,86.07,86733237,CC(C)[O-].[Al]
-Polyamic Acid,,,,
 BPDA,,,75494,C1=CC2=C(C=C1C3=CC4=C(C=C3)C(=O)OC4=O)C(=O)OC2=O
 AMDMS,,,22033799,CO[Si](C)(CC=C)OC
 Silica Fiber,,,24261,O=[Si]=O
-Alkaline Silica Sol,,,,
-Silica Hydrosol,,,,
-TMES,,,,
-ODA,,,,
-Xonotlite Fibers,,,,
+TMES,,,15772,CCO[Si](C)(C)C
+ODA,,,7579,C1=CC(=CC=C1N)OC2=CC=C(C=C2)N
+Xonotlite Fibers,,,6335841,O.O[Si](=O)O.[Ca]
 TMCS,,,6397,C[Si](C)(C)Cl
-TmAOH,,,,
+TmAOH,,,60966,C[N+](C)(C)C.[OH-]
 HMDZ,,,13838,C[Si](C)(C)N[Si](C)(C)C
 Formaldehyde,,,712,C=O
 HNO3,,,944,[N+](=O)(O)[O-]
@@ -49,30 +46,33 @@ Heptane,,,8900,CCCCCCC
 NH3,,,222,N
 N-heptane,,,8900,CCCCCCC
 N2,,,947,N#N
-PVMDMS,,,,
+PVMDMS,,,85589,CO[Si](C)(C=C)OC
 NMP,,,13387,CN1CCCC1=O
-SDS,,,,
-ATMS,,,,
+SDS,,,3423265,CCCCCCCCCCCCOS(=O)(=O)[O-].[Na+]
+ATMS,,,75698,CO[Si](CC=C)(OC)OC
 Al2O3,,,9989226,[O-2].[O-2].[O-2].[Al+3].[Al+3]
 APTMS,,,87067127,CCC[Si](OC)(OC)OCN
 DTBP,,,8033,CC(C)(C)OOC(C)(C)C
-TMMS,,,,
+TMMS,,,15771,CO[Si](C)(C)C
 Urea,,,1176,C(=O)(N)N
 Pyridine,,,1049,C1=CC=NC=C1
-Glass Fiber,,,,
+Glass Fiber,,,24261,O=[Si]=O
 N-hexane,,,8058,CCCCCC
 PO,,,6328143,[Po]
 PMDA,,,6966,C1=C2C(=CC3=C1C(=O)OC3=O)C(=O)OC2=O
 Resorcinol,,,5054,C1=CC(=CC(=C1)O)O
 HMDSO,,,24764,C[Si](C)(C)O[Si](C)(C)C
-VMDMS,,,,
+VMDMS,,,85589,CO[Si](C)(C=C)OC
 Acetic Anhydride,,,7918,CC(=O)OC(=O)C
-RALUFON 416,,,,
-CO2,,,,
-ATP Fiber,,,,
-BzOH,,,,
-Acetic Anyhride,,,,
+CO2,,,280,C(=O)=O
+ATP Fiber,,,10038374,[O-][Si]([O-])([O-])[O-].[O-][Si]([O-])([O-])[O-].[Mg+2].[Al+3].[Al+3]
+BzOH,,,244,C1=CC=C(C=C1)CO
+Acetic Anyhride,,,7918,CC(=O)OC(=O)C
 Graphene,,,5462310,[C]
-Kaolin Clay,,,,
+Kaolin Clay,,,56841936,O.O.O=[Al]O[Si](=O)O[Si](=O)O[Al]=O
 BN,,,66227,B#N
 CNT,,,8491,CC1=C(C=C(C=C1)[N+](=O)[O-])Cl
+Polyamic Acid,,,,
+Alkaline Silica Sol,,,,
+Silica Hydrosol,,,,
+RALUFON 414,,,,
