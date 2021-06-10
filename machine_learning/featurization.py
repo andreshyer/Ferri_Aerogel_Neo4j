@@ -143,14 +143,14 @@ class DataHolder:
                     return cols
 
             # Split the sets into testing and training data
-            x_test, y_test = reshape(testing.drop(y_columns, axis=1)), reshape(testing[y_columns])
-            x_train, y_train = reshape(training.drop(y_columns, axis=1)), reshape(training[y_columns])
+            x_test, y_test = testing.drop(y_columns, axis=1), testing[y_columns]
+            x_train, y_train = training.drop(y_columns, axis=1), training[y_columns]
 
             # Do the same for val set if the val percent is more than 0
             if val_ids:
                 val_ids = list(val_ids)
                 val = self.df.loc[self.df['row_type'] == "val"].drop(['row_type', self.grouping_column], axis=1)
-                x_val, y_val = reshape(val.drop(y_columns, axis=1)), reshape(val[y_columns])
+                x_val, y_val = val.drop(y_columns, axis=1), val[y_columns]
             else:
                 x_val, y_val = None, None
 
@@ -158,6 +158,18 @@ class DataHolder:
             # This is likely better calculated in a separate model class anyways, as holding the types is out
             # of the scope of this class
             self.df = self.df.drop(['row_type'], axis=1)
+
+        def reshape(cols):  # Test if dataframe only has one column, if so return a series with info
+            if len(cols.columns) == 1:
+                return cols.squeeze()
+            else:
+                return cols
+
+        # Reshape the data
+        x_test, y_test = reshape(x_test), reshape(y_test)
+        x_train, y_train = reshape(x_train), reshape(y_train)
+        if x_val:
+            x_val, y_val = reshape(x_val), reshape(y_val)
 
         return x_test, x_train, x_val, y_test, y_train, y_val
 
