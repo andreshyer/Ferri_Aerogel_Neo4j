@@ -23,10 +23,10 @@ if __name__ == "__main__":
     featurizer = Featurizer(data)  # TODO add logic to actually featurize the data
     featurizer.featurize_molecules(method=['rdkit2d'])
 
-    complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
-    data = complex_processor.get_only_important_columns()
+#    complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
+ #   data = complex_processor.get_only_important_columns()
 
-    splitter = DataSplitter(df=data, y_columns=y_columns,
-                            train_percent=0.8, test_percent=0.2, val_percent=0,
-                            grouping_column=paper_id_column, state=None)
+    splitter = DataSplitter(df=data, y_columns='Surface Area (m2/g)',
+                            train_percent=0.8, test_percent=0.2, val_percent=0, state=None)
     x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+    print(y_train)
