@@ -14,17 +14,15 @@ if __name__ == "__main__":
                     'Average Pore Size (nm)']
     paper_id_column = "paper_id"
 
-    injester = Ingester(data, columns_to_drop=drop_columns)
-    injester.replace_compounds_with_smiles()
-    injester.replace_nan_with_zeros()
-    # data = injester.replace_words_with_numbers(ignore_smiles=False)
-    data = injester.remove_non_smiles_str_columns()
+    featurizer = Featurizer(data, columns_to_drop=drop_columns)
+    featurizer.remove_non_smiles_str_columns()
+    featurizer.replace_compounds_with_smiles()
+    featurizer.featurize_molecules(method='rdkit2d')
+    data = featurizer.replace_nan_with_zeros()
 
-    featurizer = Featurizer(data)  # TODO add logic to actually featurize the data
-    featurizer.featurize_molecules(method=['rdkit2d'])
-
-    complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
-    data = complex_processor.get_only_important_columns()
+    # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
+    # feature_importances, important_columns = complex_processor.get_only_important_columns(number_of_models=5)
+    # data = data[important_columns]
 
     splitter = DataSplitter(df=data, y_columns=y_columns,
                             train_percent=0.8, test_percent=0.2, val_percent=0,

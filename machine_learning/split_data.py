@@ -56,7 +56,6 @@ class DataSplitter:
         :param train_percent: percent for training
         :param test_percent: percent for testing
         :param val_percent: percent for val
-        :param state: Salt to reproduce results
         :return:
         """
 
@@ -99,6 +98,8 @@ class DataSplitter:
 
         :return:
         """
+        x_columns_to_drop = self.y_columns
+        x_columns_to_drop.append(self.grouping_column)
 
         # Grab all the unique indexes in the grouping column (ex: paper_id)
         grouping_column_indexes = self.df[self.grouping_column].unique()
@@ -120,14 +121,14 @@ class DataSplitter:
         training = self.df.loc[self.df[self.grouping_column].isin(train_ids)]
 
         # spilt up testing and training set into x and y
-        x_test, y_test = testing.drop(self.y_columns, axis=1), testing[self.y_columns]
-        x_train, y_train = training.drop(self.y_columns, axis=1), training[self.y_columns]
+        x_test, y_test = testing.drop(x_columns_to_drop, axis=1), testing[self.y_columns]
+        x_train, y_train = training.drop(x_columns_to_drop, axis=1), training[self.y_columns]
 
         # Do the same for val set if the val percent is more than 0
         if isinstance(val_ids, ndarray):  # If val_ids is not None
             val_ids = list(val_ids)
             val = self.df.loc[self.df[self.grouping_column].isin(val_ids)]
-            x_val, y_val = val.drop(self.y_columns, axis=1), val[self.y_columns]
+            x_val, y_val = val.drop(x_columns_to_drop, axis=1), val[self.y_columns]
         else:
             x_val, y_val = None, None
         return x_test, x_train, x_val, y_test, y_train, y_val
