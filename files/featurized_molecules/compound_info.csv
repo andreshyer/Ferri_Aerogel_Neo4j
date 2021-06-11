@@ -72,3 +72,61 @@ Graphene,5462310,[C]
 Kaolin Clay,56841936,O.O.O=[Al]O[Si](=O)O[Si](=O)O[Al]=O
 BN,66227,B#N
 CNT,8491,CC1=C(C=C(C=C1)[N+](=O)[O-])Cl
+MTES,16241,CCO[Si](C)(OCC)OCC
+PDMS,121233057,C(=C)C(=O)OCCC[Si](C)(C)O[Si](C)(C)OC
+TMSPA,83756,CO[Si](CCCN)(OC)OC
+CPTMS,62449,CO[Si](CCCCl)(OC)OC
+MPTMS,20473,CO[Si](CCCS)(OC)OC
+PVA,11199,C=CO
+TBO,25203927,CCCCO.CCCCO.CCCCO.CCCCO.[Ti]
+PTPES,11196400,CCO[Si](C(=C)C1=CC=CC=C1)(OCC)OCC
+Ethoxy-polysiloxane,57159978,CCOC[Si]O
+BC,14055602,COC1C(OC(C(C1O)O)OC2C(OC(C(C2O)O)OC)CO)CO
+AgNO3,24470,[N+](=O)([O-])[O-].[Ag+]
+Cu2O,10313194,[O-2].[Cu+].[Cu+]
+TiCl4,24193,Cl[Ti](Cl)(Cl)Cl
+Silk Fibers,135666569,C1=CC=C2C(=C1)C=CC(=C2N=NC3=CC4=C(C=C3)C(=CC=C4)S(=O)(=O)[O-])O.[Na+]
+Chromium Trichloride Hexahydrate,166918,O.O.O.O.O.O.[Cl-].[Cl-].[Cl-].[Cr+3]
+Chromium Trichloride Nonahydrate,9887206,[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].O.O.O.O.O.O.O.O.O.[Cr+3]
+Ytterbium Trinitrate Pentahydrate,16211525,[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].O.O.O.O.O.[Yb+3]
+Aluminum Chloride Hexahydrate,24564,O.O.O.O.O.O.[Al](Cl)(Cl)Cl
+Carbon Fiber,5462310,[C]
+Carbon Nanofiber,5462310,[C]
+DMA,31374,CC(=O)N(C)C
+KOH,14797,[OH-].[K+]
+Acetylacetone,31261,CC(=O)CC(=O)C
+HF,14917,F
+Hexanediol Diacrylate,17787778,CCCCCC(OC(=O)C=C)OC(=O)C=C
+LiOH,3939,[Li+].[OH-]
+MEMO,null,null
+DMDMS,null,null
+PHS,null,null
+Ni2+,null,null
+Ba2+,null,null
+Cu2+,null,null
+Fe3+,null,null
+Ca2+,null,null
+Mg2+,null,null
+TBC,null,null
+TMEOS,null,null
+DMDEOS,null,null
+HMDS,null,null
+HA,null,null
+PDA,null,null
+Cyclohexane,null,null
+Silicic Acid,null,null
+Al(NO3)3,null,null
+Chitosan,null,null
+Aluminum Isoproxide,null,null
+Eosin Y,null,null
+WO3,null,null
+MTBE,null,null
+TiO2,null,null
+Acetone,null,null
+2-propanol,null,null
+Toluene,null,null
+Xylene,null,null
+Alcohol,null,null
+Nitrogen Atmosphere,null,null
+N2 Tube Furnace,null,null
+H2/N2,null,null
