@@ -17,7 +17,8 @@ if __name__ == "__main__":
     injester = Ingester(data, columns_to_drop=drop_columns)
     injester.replace_compounds_with_smiles()
     injester.replace_nan_with_zeros()
-    data = injester.replace_words_with_numbers(ignore_smiles=False)
+    # data = injester.replace_words_with_numbers(ignore_smiles=False)
+    data = injester.remove_non_smiles_str_columns()
 
     featurizer = Featurizer(data)  # TODO add logic to actually featurize the data
     featurizer.featurize_molecules(method=['rdkit2d'])

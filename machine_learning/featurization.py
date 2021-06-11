@@ -1,7 +1,6 @@
 
 from pandas import DataFrame
 from descriptastorus.descriptors.DescriptorGenerator import MakeGenerator
-from rdkit.Chem import MolFromSmiles
 
 from machine_learning import Ingester
 
@@ -15,10 +14,7 @@ class Featurizer(Ingester):
 
         :param df: Pandas DataFrame
         """
-
-        self.raw_df: DataFrame = df
-        self.df: DataFrame = df
-        super().__init__(df=self.df)
+        super().__init__(df=df)
 
     def featurize_molecules(self, method: list[str]):
         """
@@ -28,9 +24,13 @@ class Featurizer(Ingester):
         :return: Pandas DataFrame
         """
         # self.__test_col_if_obj_smiles__()
-
         generator = MakeGenerator(("rdkit2d",))
+
+        def do_featurize(smi):
+            data = generator.process(smi)
+
         columns = []
         for name, numpy_type in generator.GetColumns():
             columns.append(name)
+        self.df[columns] = self
         data = generator.process(smiles="c1ccccc1")

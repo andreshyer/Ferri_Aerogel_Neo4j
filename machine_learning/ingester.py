@@ -27,8 +27,8 @@ class Ingester:
 
         # Gather information in the compound info file
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
-        compound_dict = read_csv(compound_info_file)
-        self.compound_dict = dict(zip(compound_dict['compound'], compound_dict['smiles']))
+        compound_dict: DataFrame = read_csv(compound_info_file)
+        self.compound_dict: dict[str, str] = dict(zip(compound_dict['compound'], compound_dict['smiles']))
 
     def __test_col_if_obj_smiles__(self, df_column: Series):
         """
@@ -62,7 +62,7 @@ class Ingester:
 
     def replace_compounds_with_smiles(self, verify: bool = True):
         """
-        This function parses each column in the DataFrame and seaches for columns that are all compounds. Then
+        This function parses each column in the DataFrame and searches for columns that are all compounds. Then
         it goes and replaces each of those compounds with their SMILES in compound_info.csv.
 
         :param verify: bool, option to make sure all the compounds in a column have a corresponding SMILES
@@ -111,4 +111,14 @@ class Ingester:
         keywords = set(keywords)  # Keep on the unique words
         keywords = dict(zip(keywords, range(len(keywords))))  # Create a dict of [words, id]
         self.df = self.df.replace(keywords)  # Replace the words in the DataFrame
+        return self.df
+
+    def remove_non_smiles_str_columns(self):
+
+        bad_columns = []
+        for column in self.df:
+            if self.df[column].dtype == "object":  # If the column has any strings
+                if not self.__test_col_if_obj_smiles__(self.df[column]):
+                    bad_columns.append(column)
+        self.df = self.df.drop(bad_columns, axis=1)
         return self.df
