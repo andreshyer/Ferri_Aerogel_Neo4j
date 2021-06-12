@@ -3,6 +3,7 @@ from typing import Union
 from pandas import DataFrame
 from numpy import ndarray
 from sklearn.model_selection import train_test_split
+import numpy as np
 
 
 class DataSplitter:
@@ -151,4 +152,7 @@ class DataSplitter:
         x_train, y_train = self.__reshape_df__(x_train), self.__reshape_df__(y_train)
         if isinstance(x_val, DataFrame):  # If val sets are not
             x_val, y_val = self.__reshape_df__(x_val), self.__reshape_df__(y_val)
+
+        x_test, x_train, x_val = np.array(x_test), np.array(x_train), np.array(x_val)
+
         return x_test, x_train, x_val, y_test, y_train, y_val
