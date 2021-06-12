@@ -98,7 +98,7 @@ class DataSplitter:
 
         :return:
         """
-        x_columns_to_drop = self.y_columns
+        x_columns_to_drop = self.y_columns.copy()
         x_columns_to_drop.append(self.grouping_column)
 
         # Grab all the unique indexes in the grouping column (ex: paper_id)

@@ -4,6 +4,7 @@ from warnings import warn
 
 from numpy import isnan
 from pandas import DataFrame, read_csv, Series
+from sklearn.preprocessing import StandardScaler
 
 
 class Ingester:
@@ -33,6 +34,9 @@ class Ingester:
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
         self.compound_df: DataFrame = read_csv(compound_info_file)
         self.compound_dict: dict[str, str] = dict(zip(self.compound_df['compound'], self.compound_df['smiles']))
+
+        # Hold variable for sklearn-scaler
+        self.scaler = None
 
     def __test_col_if_obj_smiles__(self, df_column: Series):
         """
