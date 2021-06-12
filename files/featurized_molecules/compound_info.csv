@@ -1,132 +1,131 @@
 compound,cid,smiles
-Water Glass,23266,[O-][Si](=O)[O-].[Na+].[Na+]
-H2O,962,O
-H2SO4,1118,OS(=O)(=O)O
-NH4F,25516,[NH4+].[F-]
-TEOS,6517,CCO[Si](OCC)(OCC)OCC
-EtOH,702,CCO
-Oxalic Acid,971,C(=O)(C(=O)O)O
-NH4OH,14923,[NH4+].[OH-]
-HCl,313,Cl
-DMF,6228,CN(C)C=O
-KP,171204,C1CC(N(C1)C(=O)C(CCCCN)N)C(=O)O
-MeOH,887,CO
-MTMS,14456,CO[Si](C)(OC)OC
-GPTMS,17317,CO[Si](CCCOCC1CO1)(OC)OC
-APTES,13521,CCO[Si](CCCN)(OCC)OCC
-VTES,6516,CCO[Si](C=C)(OCC)OCC
-PEDS,15241538,CCO[SiH](OCC)O[Si](OCC)(OCC)OCC
-OTS,448337,C1=CC(=CC=C1C(CN)O)O
-NaOH,14798,[OH-].[Na+]
-SiCl4,24816,[Si](Cl)(Cl)(Cl)Cl
-Acetic Acid,176,CC(=O)O
-CTAC,8154,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Cl-]
-TPOS,69627,CCCO[Si](OCCC)(OCCC)OCCC
-TMOS,12682,CO[Si](OC)(OC)OC
-MeOH NH4OH,21894508,CO.[NH4+].[OH-]
-Acetonitrile,6342,CC#N
-VTMS,76004,CO[Si](C=C)(OC)OC
-CTAB,5974,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Br-]
-Na2SiO3,23266,[O-][Si](=O)[O-].[Na+].[Na+]
-Isopropanol,3776,CC(C)O
-Aluminum Isopropoxide,86733237,CC(C)[O-].[Al]
-BPDA,75494,C1=CC2=C(C=C1C3=CC4=C(C=C3)C(=O)OC4=O)C(=O)OC2=O
-AMDMS,22033799,CO[Si](C)(CC=C)OC
-Silica Fiber,24261,O=[Si]=O
-TMES,15772,CCO[Si](C)(C)C
-ODA,7579,C1=CC(=CC=C1N)OC2=CC=C(C=C2)N
-Xonotlite Fibers,6335841,O.O[Si](=O)O.[Ca]
-TMCS,6397,C[Si](C)(C)Cl
-TmAOH,60966,C[N+](C)(C)C.[OH-]
-HMDZ,13838,C[Si](C)(C)N[Si](C)(C)C
-Formaldehyde,712,C=O
-HNO3,944,[N+](=O)(O)[O-]
-Tert-butyl Alcohol,6386,CC(C)(C)O
-Heptane,8900,CCCCCCC
-NH3,222,N
-N-heptane,8900,CCCCCCC
-N2,947,N#N
-PVMDMS,85589,CO[Si](C)(C=C)OC
-NMP,13387,CN1CCCC1=O
-SDS,3423265,CCCCCCCCCCCCOS(=O)(=O)[O-].[Na+]
-ATMS,75698,CO[Si](CC=C)(OC)OC
-Al2O3,9989226,[O-2].[O-2].[O-2].[Al+3].[Al+3]
-APTMS,87067127,CCC[Si](OC)(OC)OCN
-DTBP,8033,CC(C)(C)OOC(C)(C)C
-TMMS,15771,CO[Si](C)(C)C
-Urea,1176,C(=O)(N)N
-Pyridine,1049,C1=CC=NC=C1
-Glass Fiber,24261,O=[Si]=O
-N-hexane,8058,CCCCCC
-PO,6328143,[Po]
-PMDA,6966,C1=C2C(=CC3=C1C(=O)OC3=O)C(=O)OC2=O
-Resorcinol,5054,C1=CC(=CC(=C1)O)O
-HMDSO,24764,C[Si](C)(C)O[Si](C)(C)C
-VMDMS,85589,CO[Si](C)(C=C)OC
-Acetic Anhydride,7918,CC(=O)OC(=O)C
-CO2,280,C(=O)=O
-ATP Fiber,10038374,[O-][Si]([O-])([O-])[O-].[O-][Si]([O-])([O-])[O-].[Mg+2].[Al+3].[Al+3]
-BzOH,244,C1=CC=C(C=C1)CO
-Acetic Anyhride,7918,CC(=O)OC(=O)C
-Graphene,5462310,[C]
-Kaolin Clay,56841936,O.O.O=[Al]O[Si](=O)O[Si](=O)O[Al]=O
-BN,66227,B#N
-CNT,8491,CC1=C(C=C(C=C1)[N+](=O)[O-])Cl
-MTES,16241,CCO[Si](C)(OCC)OCC
-PDMS,121233057,C(=C)C(=O)OCCC[Si](C)(C)O[Si](C)(C)OC
-TMSPA,83756,CO[Si](CCCN)(OC)OC
-CPTMS,62449,CO[Si](CCCCl)(OC)OC
-MPTMS,20473,CO[Si](CCCS)(OC)OC
-PVA,11199,C=CO
-TBO,25203927,CCCCO.CCCCO.CCCCO.CCCCO.[Ti]
-PTPES,11196400,CCO[Si](C(=C)C1=CC=CC=C1)(OCC)OCC
-Ethoxy-polysiloxane,57159978,CCOC[Si]O
-BC,14055602,COC1C(OC(C(C1O)O)OC2C(OC(C(C2O)O)OC)CO)CO
-AgNO3,24470,[N+](=O)([O-])[O-].[Ag+]
-Cu2O,10313194,[O-2].[Cu+].[Cu+]
-TiCl4,24193,Cl[Ti](Cl)(Cl)Cl
-Silk Fibers,135666569,C1=CC=C2C(=C1)C=CC(=C2N=NC3=CC4=C(C=C3)C(=CC=C4)S(=O)(=O)[O-])O.[Na+]
-Chromium Trichloride Hexahydrate,166918,O.O.O.O.O.O.[Cl-].[Cl-].[Cl-].[Cr+3]
-Chromium Trichloride Nonahydrate,9887206,[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].O.O.O.O.O.O.O.O.O.[Cr+3]
-Ytterbium Trinitrate Pentahydrate,16211525,[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].O.O.O.O.O.[Yb+3]
-Aluminum Chloride Hexahydrate,24564,O.O.O.O.O.O.[Al](Cl)(Cl)Cl
-Carbon Fiber,5462310,[C]
-Carbon Nanofiber,5462310,[C]
-DMA,31374,CC(=O)N(C)C
-KOH,14797,[OH-].[K+]
-Acetylacetone,31261,CC(=O)CC(=O)C
-HF,14917,F
-Hexanediol Diacrylate,17787778,CCCCCC(OC(=O)C=C)OC(=O)C=C
-LiOH,3939,[Li+].[OH-]
-MEMO,null,null
-DMDMS,null,null
-PHS,null,null
-Ni2+,null,null
-Ba2+,null,null
-Cu2+,null,null
-Fe3+,null,null
-Ca2+,null,null
-Mg2+,null,null
-TBC,null,null
-TMEOS,null,null
-DMDEOS,null,null
-HMDS,null,null
-HA,null,null
-PDA,null,null
-Cyclohexane,null,null
-Silicic Acid,null,null
-Al(NO3)3,null,null
-Chitosan,null,null
-Aluminum Isoproxide,null,null
-Eosin Y,null,null
-WO3,null,null
-MTBE,null,null
-TiO2,null,null
-Acetone,null,null
-2-propanol,null,null
-Toluene,null,null
-Xylene,null,null
-Alcohol,null,null
-Nitrogen Atmosphere,null,null
-N2 Tube Furnace,null,null
-H2/N2,null,null
+Water Glass,23266.0,[O-][Si](=O)[O-].[Na+].[Na+]
+H2O,962.0,O
+H2SO4,1118.0,OS(=O)(=O)O
+NH4F,25516.0,[NH4+].[F-]
+TEOS,6517.0,CCO[Si](OCC)(OCC)OCC
+EtOH,702.0,CCO
+Oxalic Acid,971.0,C(=O)(C(=O)O)O
+NH4OH,14923.0,[NH4+].[OH-]
+HCl,313.0,Cl
+DMF,6228.0,CN(C)C=O
+KP,171204.0,C1CC(N(C1)C(=O)C(CCCCN)N)C(=O)O
+MeOH,887.0,CO
+MTMS,14456.0,CO[Si](C)(OC)OC
+GPTMS,17317.0,CO[Si](CCCOCC1CO1)(OC)OC
+APTES,13521.0,CCO[Si](CCCN)(OCC)OCC
+VTES,6516.0,CCO[Si](C=C)(OCC)OCC
+PEDS,15241538.0,CCO[SiH](OCC)O[Si](OCC)(OCC)OCC
+OTS,448337.0,C1=CC(=CC=C1C(CN)O)O
+NaOH,14798.0,[OH-].[Na+]
+SiCl4,24816.0,[Si](Cl)(Cl)(Cl)Cl
+Acetic Acid,176.0,CC(=O)O
+CTAC,8154.0,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Cl-]
+TPOS,69627.0,CCCO[Si](OCCC)(OCCC)OCCC
+TMOS,12682.0,CO[Si](OC)(OC)OC
+MeOH NH4OH,21894508.0,CO.[NH4+].[OH-]
+Acetonitrile,6342.0,CC#N
+VTMS,76004.0,CO[Si](C=C)(OC)OC
+CTAB,5974.0,CCCCCCCCCCCCCCCC[N+](C)(C)C.[Br-]
+Na2SiO3,23266.0,[O-][Si](=O)[O-].[Na+].[Na+]
+Isopropanol,3776.0,CC(C)O
+Aluminum Isopropoxide,86733237.0,CC(C)[O-].[Al]
+BPDA,75494.0,C1=CC2=C(C=C1C3=CC4=C(C=C3)C(=O)OC4=O)C(=O)OC2=O
+AMDMS,22033799.0,CO[Si](C)(CC=C)OC
+Silica Fiber,24261.0,O=[Si]=O
+TMES,15772.0,CCO[Si](C)(C)C
+ODA,7579.0,C1=CC(=CC=C1N)OC2=CC=C(C=C2)N
+Xonotlite Fibers,6335841.0,O.O[Si](=O)O.[Ca]
+TMCS,6397.0,C[Si](C)(C)Cl
+TmAOH,60966.0,C[N+](C)(C)C.[OH-]
+HMDZ,13838.0,C[Si](C)(C)N[Si](C)(C)C
+Formaldehyde,712.0,C=O
+HNO3,944.0,[N+](=O)(O)[O-]
+Tert-butyl Alcohol,6386.0,CC(C)(C)O
+Heptane,8900.0,CCCCCCC
+NH3,222.0,N
+N-heptane,8900.0,CCCCCCC
+N2,947.0,N#N
+PVMDMS,85589.0,CO[Si](C)(C=C)OC
+NMP,13387.0,CN1CCCC1=O
+SDS,3423265.0,CCCCCCCCCCCCOS(=O)(=O)[O-].[Na+]
+ATMS,75698.0,CO[Si](CC=C)(OC)OC
+Al2O3,9989226.0,[O-2].[O-2].[O-2].[Al+3].[Al+3]
+APTMS,87067127.0,CCC[Si](OC)(OC)OCN
+DTBP,8033.0,CC(C)(C)OOC(C)(C)C
+TMMS,15771.0,CO[Si](C)(C)C
+Urea,1176.0,C(=O)(N)N
+Pyridine,1049.0,C1=CC=NC=C1
+Glass Fiber,24261.0,O=[Si]=O
+N-hexane,8058.0,CCCCCC
+PO,6328143.0,[Po]
+PMDA,6966.0,C1=C2C(=CC3=C1C(=O)OC3=O)C(=O)OC2=O
+Resorcinol,5054.0,C1=CC(=CC(=C1)O)O
+HMDSO,24764.0,C[Si](C)(C)O[Si](C)(C)C
+VMDMS,85589.0,CO[Si](C)(C=C)OC
+Acetic Anhydride,7918.0,CC(=O)OC(=O)C
+CO2,280.0,C(=O)=O
+ATP Fiber,10038374.0,[O-][Si]([O-])([O-])[O-].[O-][Si]([O-])([O-])[O-].[Mg+2].[Al+3].[Al+3]
+BzOH,244.0,C1=CC=C(C=C1)CO
+Acetic Anyhride,7918.0,CC(=O)OC(=O)C
+Graphene,5462310.0,[C]
+Kaolin Clay,56841936.0,O.O.O=[Al]O[Si](=O)O[Si](=O)O[Al]=O
+BN,66227.0,B#N
+CNT,8491.0,CC1=C(C=C(C=C1)[N+](=O)[O-])Cl
+MTES,16241.0,CCO[Si](C)(OCC)OCC
+PDMS,121233057.0,C(=C)C(=O)OCCC[Si](C)(C)O[Si](C)(C)OC
+TMSPA,83756.0,CO[Si](CCCN)(OC)OC
+CPTMS,62449.0,CO[Si](CCCCl)(OC)OC
+MPTMS,20473.0,CO[Si](CCCS)(OC)OC
+PVA,11199.0,C=CO
+TBO,25203927.0,CCCCO.CCCCO.CCCCO.CCCCO.[Ti]
+PTPES,11196400.0,CCO[Si](C(=C)C1=CC=CC=C1)(OCC)OCC
+Ethoxy-polysiloxane,57159978.0,CCOC[Si]O
+BC,14055602.0,COC1C(OC(C(C1O)O)OC2C(OC(C(C2O)O)OC)CO)CO
+AgNO3,24470.0,[N+](=O)([O-])[O-].[Ag+]
+Cu2O,10313194.0,[O-2].[Cu+].[Cu+]
+TiCl4,24193.0,Cl[Ti](Cl)(Cl)Cl
+Silk Fibers,135666569.0,C1=CC=C2C(=C1)C=CC(=C2N=NC3=CC4=C(C=C3)C(=CC=C4)S(=O)(=O)[O-])O.[Na+]
+Chromium Trichloride Hexahydrate,166918.0,O.O.O.O.O.O.[Cl-].[Cl-].[Cl-].[Cr+3]
+Chromium Trichloride Nonahydrate,9887206.0,[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].O.O.O.O.O.O.O.O.O.[Cr+3]
+Ytterbium Trinitrate Pentahydrate,16211525.0,[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].[N+](=O)([O-])[O-].O.O.O.O.O.[Yb+3]
+Aluminum Chloride Hexahydrate,24564.0,O.O.O.O.O.O.[Al](Cl)(Cl)Cl
+Carbon Fiber,5462310.0,[C]
+Carbon Nanofiber,5462310.0,[C]
+DMA,31374.0,CC(=O)N(C)C
+KOH,14797.0,[OH-].[K+]
+Acetylacetone,31261.0,CC(=O)CC(=O)C
+HF,14917.0,F
+Hexanediol Diacrylate,17787778.0,CCCCCC(OC(=O)C=C)OC(=O)C=C
+LiOH,3939.0,[Li+].[OH-]
+MEMO,17318.0,CC(=C)C(=O)OCCC[Si](OC)(OC)OC
+DMDMS,66187,CO[Si](C)(C)OC
+PHS,6327710,CCO[Si](OCC)OCC
+Ni2+,934.0,[Ni+2]
+Ba2+,104810.0,[Ba+2]
+Cu2+,27099.0,[Cu+2]
+Fe3+,29936.0,[Fe+3]
+Ca2+,271.0,[Ca+2]
+Mg2+,888.0,[Mg+2]
+TBC,7381,CC(C)(C)C1=CC(=C(C=C1)O)O
+DMDEOS,62322,CCO[Si](C)(C)OCC
+HMDS,13838.0,C[Si](C)(C)N[Si](C)(C)C
+HA,5744.0,CC(=O)OCC(=O)C1(CCC2C1(CC(C3C2CCC4=CC(=O)CCC34C)O)C)O
+PDA,12599.0,C1C(C(OC1N2C=NC3=C(N=CN=C32)N)COP(=O)(O)O)O
+Cyclohexane,8078.0,C1CCCCC1
+Silicic Acid,14942,O[Si](O)(O)O
+Al(NO3)3,16713320.0,[N+](=O)([O-])O[Al](O[N+](=O)[O-])O[N+](=O)[O-]
+Chitosan,71853.0,COC(=O)NC1C(C(C(OC1OC2C(OC(C(C2O)N)OC3C(OC(C(C3O)N)O)CO)CO)CO)OC4C(C(C(C(O4)CO)OC5C(C(C(C(O5)CO)OC6C(C(C(C(O6)CO)OC7C(C(C(C(O7)CO)OC8C(C(C(C(O8)CO)OC9C(C(C(C(O9)CO)O)O)N)O)N)O)N)O)N)O)N)O)N)O
+Aluminium isopropoxide,11143,CC(C)[O-].CC(C)[O-].CC(C)[O-].[Al+3]
+Eosin Y,11048.0,C1=CC=C(C(=C1)C2=C3C=C(C(=O)C(=C3OC4=C(C(=C(C=C24)Br)[O-])Br)Br)Br)C(=O)[O-].[Na+].[Na+]
+WO3,14811,O=[W](=O)=O
+MTBE,15413.0,CC(C)(C)OC
+TiO2,26042.0,O=[Ti]=O
+Acetone,180.0,CC(=O)C
+2-propanol,3776.0,CC(C)O
+Toluene,1140.0,CC1=CC=CC=C1
+Xylene,7929,CC1=CC(=CC=C1)C
+Alcohol,702.0,CCO
+Nitrogen Atmosphere,947,N#N
+N2 Tube Furnace,947,N#N
+H2/N2,None,[HH].N#N

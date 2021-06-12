@@ -1,8 +1,10 @@
 from typing import Union
 from pathlib import Path
+from warnings import warn
 
 from numpy import isnan
 from pandas import DataFrame, read_csv, Series
+from sklearn.preprocessing import StandardScaler
 
 
 class Ingester:
@@ -16,19 +18,25 @@ class Ingester:
         :param columns_to_drop:
         """
         self.raw_df: DataFrame = df
-        self.df: DataFrame = df
+        self.df = df
+
+        # Drop columns that are all nan
+        self.df = self.df.dropna(axis=1, how='all')
 
         # Strip whitespace in DataFrame if there is any
-        self.df = self.df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+        self.df: DataFrame = self.df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
         # Drop columns specified by user
         if columns_to_drop:
-            self.df = self.df.drop(columns_to_drop, axis=1)
+            self.df: DataFrame = self.df.drop(columns_to_drop, axis=1)
 
         # Gather information in the compound info file
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
-        compound_dict: DataFrame = read_csv(compound_info_file)
-        self.compound_dict: dict[str, str] = dict(zip(compound_dict['compound'], compound_dict['smiles']))
+        self.compound_df: DataFrame = read_csv(compound_info_file)
+        self.compound_dict: dict[str, str] = dict(zip(self.compound_df['compound'], self.compound_df['smiles']))
+
+        # Hold variable for sklearn-scaler
+        self.scaler = None
 
     def __test_col_if_obj_smiles__(self, df_column: Series):
         """
@@ -43,6 +51,8 @@ class Ingester:
                 if isnan(x):
                     return 'maybe'
             elif x in self.compound_dict.keys():
+                return 'yes'
+            elif x in self.compound_dict.values():
                 return 'yes'
             return 'no'
 
@@ -113,12 +123,14 @@ class Ingester:
         self.df = self.df.replace(keywords)  # Replace the words in the DataFrame
         return self.df
 
-    def remove_non_smiles_str_columns(self):
+    def remove_non_smiles_str_columns(self, suppress_warnings=False):
 
         bad_columns = []
         for column in self.df:
             if self.df[column].dtype == "object":  # If the column has any strings
                 if not self.__test_col_if_obj_smiles__(self.df[column]):
+                    if not suppress_warnings:
+                        warn(f"Dropping column {column}")
                     bad_columns.append(column)
         self.df = self.df.drop(bad_columns, axis=1)
         return self.df

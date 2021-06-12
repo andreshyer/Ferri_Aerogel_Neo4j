@@ -125,5 +125,4 @@ class ComplexDataProcessor:
             important_columns.append(self.grouping_column)
 
         # Get only the important columns from the DataFrame
-        self.df = self.df[important_columns]
-        return self.df
+        return feature_importances, important_columns

@@ -15,39 +15,40 @@ if __name__ == "__main__":
 
     # schema_example()
 
-    cached_compound_info = pd.read_csv('cached_compound_info.csv')
-
-    for index, row in tqdm(cached_compound_info.iterrows()):
-        compound = row['compound']
-        if str(row['smiles']) == "nan":
-
-            cid = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{compound}/cids/TXT").text
-            cid = cid.split()[0]
-
-            # Fetch JSON data of compound
-            response = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{cid}/JSON").text
-            data = json.loads(response)
-            with open('dev.json', "w") as f:
-                json.dump(data, f, indent=6)
-
-            if isinstance(data, dict):
-                if 'Fault' in data.keys():
-                    pass
-                else:
-                    sections = data['Record']['Section']
-                    for section in sections:
-                        if section['TOCHeading'] == "Names and Identifiers":
-                            section = section['Section']
-                            for subsection in section:
-                                if subsection['TOCHeading'] == "Computed Descriptors":
-                                    try:
-                                        smiles = subsection['Section'][3]['Information'][0]['Value']
-                                        smiles = smiles['StringWithMarkup'][0]['String']
-                                        cached_compound_info.at[index, 'smiles'] = smiles
-                                        cached_compound_info.at[index, 'cid'] = cid
-                                    except IndexError:
-                                        pass
-            cached_compound_info.to_csv('dev.csv')
+    # data_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
+    # cached_compound_info = pd.read_csv(data_file)
+    #
+    # for index, row in tqdm(cached_compound_info.iterrows()):
+    #     compound = row['compound']
+    #     if str(row['smiles']) == "nan":
+    #
+    #         cid = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{compound}/cids/TXT").text
+    #         cid = cid.split()[0]
+    #
+    #         # Fetch JSON data of compound
+    #         response = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{cid}/JSON").text
+    #         data = json.loads(response)
+    #         with open('dev.json', "w") as f:
+    #             json.dump(data, f, indent=6)
+    #
+    #         if isinstance(data, dict):
+    #             if 'Fault' in data.keys():
+    #                 pass
+    #             else:
+    #                 sections = data['Record']['Section']
+    #                 for section in sections:
+    #                     if section['TOCHeading'] == "Names and Identifiers":
+    #                         section = section['Section']
+    #                         for subsection in section:
+    #                             if subsection['TOCHeading'] == "Computed Descriptors":
+    #                                 try:
+    #                                     smiles = subsection['Section'][3]['Information'][0]['Value']
+    #                                     smiles = smiles['StringWithMarkup'][0]['String']
+    #                                     cached_compound_info.at[index, 'smiles'] = smiles
+    #                                     cached_compound_info.at[index, 'cid'] = cid
+    #                                 except IndexError:
+    #                                     pass
+    #         cached_compound_info.to_csv('compound_info.csv')
 
     # data_file = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_machine_readable.csv")
     # df: pd.DataFrame = pd.read_csv(data_file)
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     #                     new_col_name = f"{col} ({i})"
     #                     df[new_col_name] = new_columns_values[i]
     #                 df = df.drop([col], axis=1)
-    # df.to_csv(str(Path(__file__).parent.parent / "files/si_aerogels/dev.csv"), index=False)
+    # df.to_csv(str(Path(__file__).parent.parent / "files/si_aerogels/compound_info.csv"), index=False)
 
     # data = str(Path(__file__).parent.parent / "files/si_aerogels/si_aerogel_machine_readable.csv")
     # data = pd.read_csv(data)
@@ -101,4 +102,4 @@ if __name__ == "__main__":
     #     return indexes[x]
     #
     # data['paper_id'] = data['Title'].apply(find_index)
-    # data.to_csv('dev.csv')
+    # data.to_csv('compound_info.csv')
