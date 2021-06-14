@@ -213,6 +213,9 @@ class Featurizer(Ingester):
         featurized_df = self.__concat_squeezed_dfs__(featurized_df)
 
         self.df = self.df.drop(self.columns_featurized, axis=1)  # Remove the columns that we featurized
+
+        self.df.reset_index(drop=True, inplace=True)  # Reset the indexes for the dataframes
+        featurized_df.reset_index(drop=True, inplace=True)
+
         self.df = concat((self.df, featurized_df), axis=1)  # Concat the main df to the featurized df
         return self.df
-

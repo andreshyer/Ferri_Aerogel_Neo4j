@@ -1,5 +1,6 @@
 from pathlib import Path
 from tqdm import tqdm
+from copy import deepcopy
 
 import numpy as np
 from pandas import DataFrame, read_csv, concat
@@ -72,65 +73,78 @@ if __name__ == "__main__":
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'paper_id']
-    paper_id_column = None
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
+    paper_id_column = 'paper_id'
+
+
+    # drop_columns.pop(len(drop_columns) - 1)
+    # paper_id_column = None
+
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-    featurizer.remove_xerogels()
-    featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
-    featurizer.replace_compounds_with_smiles()
-    featurizer.featurize_molecules(method='rdkit2d')
+    data = featurizer.remove_xerogels()
+    data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
+    data = featurizer.replace_compounds_with_smiles()
+    data = featurizer.featurize_molecules(method='rdkit2d')
     data = featurizer.replace_nan_with_zeros()
-    data[y_columns].to_csv('testing_data.csv')
+    data.to_csv('testing_data.csv')
 
     # data.to_csv('dev.csv')
-    # featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
+    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     # featurizer.replace_words_with_numbers(ignore_smiles=True)
     # data = featurizer.replace_nan_with_zeros()
 
-    # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
-    # feature_importances, important_columns = complex_processor.get_only_important_columns(number_of_models=5)
-    # data = data[important_columns]
+    # raise Exception('Stop')
 
-    splitter = DataSplitter(df=data, y_columns=y_columns,
-                            train_percent=0.8, test_percent=0.2, val_percent=0,
-                            grouping_column=paper_id_column, state=None)
-    x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
-    # print(x_test)
+    scalers = {'standard': StandardScaler(), 'min_max': MinMaxScaler()}
+    models = {'rf': RandomForestRegressor(), 'nn': MLPRegressor()}
+    featurized_string = 'featurized'
 
-    pva = DataFrame()
-    pva['actual'] = y_test.values.tolist()
+    for scaler_name, scaler in scalers.items():
+        for model_name, model in models.items():
 
-    # x_scaler = StandardScaler()
-    x_scaler = MinMaxScaler()
-    x_scaler.fit(x_train)
-    x_train = x_scaler.transform(x_train)
-    x_test = x_scaler.transform(x_test)
+            subset_data = deepcopy(data)
 
-    y_train = y_train.values.reshape(-1, 1)
-    y_test = y_test.values.reshape(-1, 1)
+            # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
+            # feature_importances, important_columns = complex_processor.get_only_important_columns(number_of_models=5)
+            # subset_data = subset_data[important_columns]
 
-    # y_scaler = StandardScaler()
-    y_scaler = MinMaxScaler()
-    y_scaler.fit(y_train)
-    y_train = y_scaler.transform(y_train).flatten()
-    y_test = y_scaler.transform(y_test).flatten()
+            splitter = DataSplitter(df=subset_data, y_columns=y_columns,
+                                    train_percent=0.8, test_percent=0.2, val_percent=0,
+                                    grouping_column=paper_id_column, state=None)
+            x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+            # print(x_test)
 
-    predicted = DataFrame()
-    for i in tqdm(range(5), desc="Predicting on data"):
-        # reg = MLPRegressor()
-        reg = RandomForestRegressor()
-        reg.fit(x_train, y_train)
-        y_predicted = reg.predict(x_test)
-        y_predicted = y_scaler.inverse_transform(y_predicted.reshape(-1, 1))
-        y_predicted = y_predicted.squeeze()
-        predicted[f'predicted_{i}'] = y_predicted
-    predicted = DataFrame(predicted)
-    predicted_avg = predicted.mean(axis=1).tolist()
-    predicted_std = predicted.std(axis=1).tolist()
+            pva = DataFrame()
+            pva['actual'] = y_test.values.tolist()
 
-    pva['pred_avg'] = predicted_avg
-    pva['pred_std'] = predicted_std
+            x_scaler = deepcopy(scaler)
+            x_scaler.fit(x_train)
+            x_train = x_scaler.transform(x_train)
+            x_test = x_scaler.transform(x_test)
 
-    pva_graph(pva, "dev_file")
+            y_train = y_train.values.reshape(-1, 1)
+            y_test = y_test.values.reshape(-1, 1)
+
+            y_scaler = deepcopy(scaler)
+            y_scaler.fit(y_train)
+            y_train = y_scaler.transform(y_train).flatten()
+            y_test = y_scaler.transform(y_test).flatten()
+
+            predicted = DataFrame()
+            for i in tqdm(range(5), desc="Predicting on data"):
+                reg = deepcopy(model)
+                reg.fit(x_train, y_train)
+                y_predicted = reg.predict(x_test)
+                y_predicted = y_scaler.inverse_transform(y_predicted.reshape(-1, 1))
+                y_predicted = y_predicted.squeeze()
+                predicted[f'predicted_{i}'] = y_predicted
+            predicted = DataFrame(predicted)
+            predicted_avg = predicted.mean(axis=1).tolist()
+            predicted_std = predicted.std(axis=1).tolist()
+
+            pva['pred_avg'] = predicted_avg
+            pva['pred_std'] = predicted_std
+
+            pva_graph(pva, f"{model_name}_{scaler_name}_{featurized_string}")
 

@@ -33,9 +33,11 @@ class Ingester:
         # Make sure y_columns are cast to a list if passed as a string
         if isinstance(y_columns, str):
             y_columns = [y_columns]
+        self.y_columns = y_columns
 
         # Drop and rows that do not have a value in the y_columns
         self.df = self.df.dropna(how='any', subset=y_columns)
+
 
         # Gather information in the compound info file
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
@@ -98,6 +100,7 @@ class Ingester:
                         self.df[column] = self.df[column].apply(replace_name_with_smiles)
                 else:
                     self.df[column] = self.df[column].apply(replace_name_with_smiles)
+        return self.df
 
     def replace_nan_with_zeros(self):
         """
