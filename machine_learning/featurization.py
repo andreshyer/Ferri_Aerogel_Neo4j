@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import Union
 from re import match
+from tqdm import tqdm
 
-from numpy import isnan
+from numpy import isnan, nan
 from pandas import DataFrame, read_csv, concat
 
 from machine_learning import Ingester
@@ -10,7 +11,7 @@ from machine_learning import Ingester
 
 class Featurizer(Ingester):
 
-    def __init__(self, df: DataFrame, columns_to_drop: Union[list[str], str] = None):
+    def __init__(self, df: DataFrame, y_columns: Union[list[str], str], columns_to_drop: Union[list[str], str] = None):
         """
         The overall goal of this script is fundamentally different than a normal featurization pipeline.
         If we were to featurize each of the smiles separately, then that would result in thousands of columns,
@@ -67,7 +68,8 @@ class Featurizer(Ingester):
         """
 
         # Pull functions and class objects from Ingester
-        super().__init__(df=df, columns_to_drop=columns_to_drop)
+        super().__init__(df=df, y_columns=y_columns, columns_to_drop=columns_to_drop)
+        self.columns_featurized: list[str] = []
 
     def __gather_same_column_types__(self):
         """
@@ -90,9 +92,9 @@ class Featurizer(Ingester):
                     else:
                         grouped_columns[base_column] = [column]  # Else add the column to the group
                     columns_featurized.append(column)  # Keep track of all the columns that are being featurized on
-                else:  # If not, cast it to it's own group
-                    grouped_columns[column] = [column]
+                else:  # If not, cast it to it's own group grouped_columns[column] = [column]
                     columns_featurized.append(column)  # Keep track of all the columns that are being featurized on
+        grouped_columns = grouped_columns.values()  # Only really need the values, the keys were just for organizing
         return grouped_columns, list(set(columns_featurized))
 
     def __featurize_each_df__(self, grouped_columns, pre_featurized_dict, pre_featurized_cols, nulls):
@@ -115,48 +117,54 @@ class Featurizer(Ingester):
             return pre_featurized_dict[x]
 
         # Calculate the featurized dataframes
-        featurized_dfs = dict(zip(grouped_columns.keys(), [[]] * len(grouped_columns)))
-        for base_column, list_of_cols in grouped_columns.items():
+        featurized_dfs = []
+        for list_of_cols in grouped_columns:
+            grouped_featurized_dfs = []
             for column in list_of_cols:
                 featurized_df = self.df[column].apply(featurize_singe_compound)  # Fetch feature for each compound
                 featurized_df = featurized_df.tolist()  # Send Dense Series to a list of list
                 featurized_df = DataFrame(featurized_df, columns=pre_featurized_cols)  # Turn list of list to a df
                 featurized_df = featurized_df.drop(['smiles'], axis=1)  # Remove smiles column
-                featurized_dfs[base_column].append(featurized_df)  # Collect featurized df in dict
+                grouped_featurized_dfs.append(featurized_df)  # Collect featurized df in dict
+            featurized_dfs.append(grouped_featurized_dfs)
 
         return featurized_dfs
 
-    @staticmethod
-    def __squeeze_grouped_dfs__(featurized_dfs):
-        """
-        Take the featurized_dfs object, and look at all the sub_featurized_df and takes the average of all
-        that values between them. This is called squeezed because all the values are squeezed together :).
+    def __squeeze_grouped_dfs__(self, featurized_dfs):
 
-        :param featurized_dfs: {dopant: [featurized Dopant (0), featurized Dopant (1), featurized Dopant (2)...], ...}
-        :return: [af Dopant, af Additional Si Co-Precursor(s), af Si Precursors, af ... ]
-        """
-        squeezed_dfs = []  # List of squeezed dfs
-        for base_column, sub_featurized_dfs in featurized_dfs.items():
-            len_sub_featurized_dfs = len(sub_featurized_dfs)  # Get the number of sub featurized dfs
-            sub_featurized_dfs_columns = sub_featurized_dfs[0].columns  # The column names
-            squeezed_featurized_df = sub_featurized_dfs.pop(0)  # Get the first df, always should be at least one
-            for featurized_df in sub_featurized_dfs:
-                squeezed_featurized_df += featurized_df  # Add all the dfs up
-            squeezed_featurized_df = squeezed_featurized_df / len_sub_featurized_dfs  # Divide by the number of sub dfs
+        def calculate_mean(row):
+            counter = 0
+            total_value = 0
+            for value in row.values:
+                if not isnan(value):
+                   total_value += value
+                   counter += 1
 
-            # Rename columns to that columns do not have repeating name
-            new_columns = []
-            for column in sub_featurized_dfs_columns:
-                new_columns.append(f"{column} `{base_column}`")
-            squeezed_featurized_df.columns = new_columns
+            if counter == 0:
+                return 0
 
-            # Add the squeezed df to the list of squeezed dfs
-            squeezed_dfs.append(squeezed_featurized_df)
+            return total_value / counter
+
+        squeezed_dfs = []
+        for n, sub_featurized_dfs in enumerate(tqdm(featurized_dfs, desc="Featurizing Data")):
+
+            squeezed_df = DataFrame()
+            sub_featurized_df_columns = sub_featurized_dfs[0].columns
+            for sub_featurized_column in sub_featurized_df_columns:
+
+                df_with_only_column = DataFrame()
+                for i, sub_featurized_df in enumerate(sub_featurized_dfs):
+                    df_with_only_column[f"{i}"] = sub_featurized_df[sub_featurized_column]
+                squeezed_df[sub_featurized_column] = df_with_only_column.apply(calculate_mean, axis=1)
+            squeezed_df.columns = sub_featurized_df_columns + f" {self.columns_featurized[n]} [{n}]"
+
+            squeezed_dfs.append(squeezed_df)
         return squeezed_dfs
 
     @staticmethod
     def __concat_squeezed_dfs__(squeezed_dfs):
         featurized_df = squeezed_dfs.pop(0)
+        featurized_df.to_csv('dev.csv')
         for squeezed_df in squeezed_dfs:
             featurized_df = concat((featurized_df, squeezed_df), axis=1)
         return featurized_df
@@ -188,7 +196,7 @@ class Featurizer(Ingester):
         #     pre_featurized_data = pre_featurized_data[only_consider_columns]
 
         # Create a list of nan's the length of the featurized
-        nulls = [0] * len(pre_featurized_data.columns)
+        nulls = [nan] * len(pre_featurized_data.columns)
 
         # Create the {smiles: features} object
         pre_featurized_dict = dict(zip(pre_featurized_data['smiles'].values.tolist(),
@@ -198,12 +206,13 @@ class Featurizer(Ingester):
         pre_featurized_cols = pre_featurized_data.columns
 
         # Run the functions to featurize the data
-        grouped_columns, columns_featurized = self.__gather_same_column_types__()
+        grouped_columns, self.columns_featurized = self.__gather_same_column_types__()
         featurized_df = self.__featurize_each_df__(grouped_columns, pre_featurized_dict, pre_featurized_cols,
                                                    nulls)
         featurized_df = self.__squeeze_grouped_dfs__(featurized_df)
         featurized_df = self.__concat_squeezed_dfs__(featurized_df)
 
-        self.df = self.df.drop(columns_featurized, axis=1)  # Remove the columns that we featurized
+        self.df = self.df.drop(self.columns_featurized, axis=1)  # Remove the columns that we featurized
         self.df = concat((self.df, featurized_df), axis=1)  # Concat the main df to the featurized df
         return self.df
+

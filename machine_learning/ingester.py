@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 class Ingester:
 
-    def __init__(self, df: DataFrame, columns_to_drop: Union[list[str], str] = None):
+    def __init__(self, df: DataFrame, y_columns: Union[list[str], str], columns_to_drop: Union[list[str], str] = None):
         """
         The goal of this class is to take in the initial DataFrame, and so some initial data cleaning.
         Namely, replace the solvent names with SMILES, replace nan with zeros, and replace all the words with numbers.
@@ -29,6 +29,13 @@ class Ingester:
         # Drop columns specified by user
         if columns_to_drop:
             self.df: DataFrame = self.df.drop(columns_to_drop, axis=1)
+
+        # Make sure y_columns are cast to a list if passed as a string
+        if isinstance(y_columns, str):
+            y_columns = [y_columns]
+
+        # Drop and rows that do not have a value in the y_columns
+        self.df = self.df.dropna(how='any', subset=y_columns)
 
         # Gather information in the compound info file
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
@@ -133,4 +140,12 @@ class Ingester:
                         warn(f"Dropping column {column}")
                     bad_columns.append(column)
         self.df = self.df.drop(bad_columns, axis=1)
+        return self.df
+
+    def remove_xerogels(self):
+
+        aerogel_drying_methods = ['Supercritical Drying', 'Freeze Drying', 'Ambient Pressure Drying']
+        xerogel_drying_methods = ['atmospheric drying', 'oven drying']
+
+        self.df = self.df.loc[self.df['Drying Method'].isin(aerogel_drying_methods)]  # Drop all xerogels
         return self.df

@@ -5,7 +5,7 @@ import numpy as np
 from pandas import DataFrame, read_csv, concat
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -64,7 +64,7 @@ def pva_graph(pva, run_name):
 
 
 if __name__ == "__main__":
-    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv"))
+    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv"))
     # y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
     # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
     #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
@@ -72,15 +72,18 @@ if __name__ == "__main__":
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
-    paper_id_column = 'paper_id'
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'paper_id']
+    paper_id_column = None
 
-    featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
+    featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
+    featurizer.remove_xerogels()
     featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
     featurizer.replace_compounds_with_smiles()
     featurizer.featurize_molecules(method='rdkit2d')
     data = featurizer.replace_nan_with_zeros()
+    data[y_columns].to_csv('testing_data.csv')
 
+    # data.to_csv('dev.csv')
     # featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
     # featurizer.replace_words_with_numbers(ignore_smiles=True)
     # data = featurizer.replace_nan_with_zeros()
@@ -93,11 +96,13 @@ if __name__ == "__main__":
                             train_percent=0.8, test_percent=0.2, val_percent=0,
                             grouping_column=paper_id_column, state=None)
     x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+    # print(x_test)
 
     pva = DataFrame()
     pva['actual'] = y_test.values.tolist()
 
-    x_scaler = StandardScaler()
+    # x_scaler = StandardScaler()
+    x_scaler = MinMaxScaler()
     x_scaler.fit(x_train)
     x_train = x_scaler.transform(x_train)
     x_test = x_scaler.transform(x_test)
@@ -105,17 +110,20 @@ if __name__ == "__main__":
     y_train = y_train.values.reshape(-1, 1)
     y_test = y_test.values.reshape(-1, 1)
 
-    y_scaler = StandardScaler()
+    # y_scaler = StandardScaler()
+    y_scaler = MinMaxScaler()
     y_scaler.fit(y_train)
     y_train = y_scaler.transform(y_train).flatten()
     y_test = y_scaler.transform(y_test).flatten()
 
     predicted = DataFrame()
-    for i in tqdm(range(100), desc="Predicting on data"):
-        reg = MLPRegressor()
+    for i in tqdm(range(5), desc="Predicting on data"):
+        # reg = MLPRegressor()
+        reg = RandomForestRegressor()
         reg.fit(x_train, y_train)
         y_predicted = reg.predict(x_test)
-        y_predicted = y_scaler.inverse_transform(y_predicted)
+        y_predicted = y_scaler.inverse_transform(y_predicted.reshape(-1, 1))
+        y_predicted = y_predicted.squeeze()
         predicted[f'predicted_{i}'] = y_predicted
     predicted = DataFrame(predicted)
     predicted_avg = predicted.mean(axis=1).tolist()
@@ -124,4 +132,5 @@ if __name__ == "__main__":
     pva['pred_avg'] = predicted_avg
     pva['pred_std'] = predicted_std
 
-    pva_graph(pva, "split_by_group_nn")
+    pva_graph(pva, "dev_file")
+
