@@ -15,9 +15,9 @@ def pva_graph(predictions_stats, predictions,run_name):
 #     else:g
     pva = predictions
 
-    r2 = predictions_stats['r2_raw']
-    mse = predictions_stats['mse_raw']
-    rmse = predictions_stats['rmse_raw']
+    r2 = predictions_stats['r2_avg']
+    mse = predictions_stats['mse_avg']
+    rmse = predictions_stats['rmse_avg']
 
     plt.rcParams['figure.figsize'] = [12, 9]
     plt.style.use('bmh')
@@ -72,7 +72,6 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
     # Get numerical feature importances
 
     importances2 = estimator.feature_importances_  # used later for graph
-
     # List of tuples with variable and importance
     feature_importances = [(feature, round(importance, 2)) for feature, importance in
                                zip(feature_list, list(importances2))]
@@ -80,15 +79,17 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
     # Sort the feature importances by most important first
     feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
 #     if len(feature_importances) > 100:
-    feature_importances = feature_importances[:30]
+#     feature_importances = feature_importances[:30]
+#     print(feature_importances)
     # Print out the feature and importances
     # [print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
 
     # prepare importance data for export and graphing
-    # indicies = (-importances2).argsort()
+    indicies = (-importances2).argsort()
+
     varimp = pd.DataFrame([], columns=['variable', 'importance'])
-    varimp['variable'] = [feature_list[i] for i in feature_importances]
-    varimp['importance'] = importances2[feature_importances]
+    varimp['variable'] = [feature_list[i] for i in indicies]
+    varimp['importance'] = importances2[indicies]
     # Importance Bar Graph
     plt.rcParams['figure.figsize'] = [15, 9]
 
@@ -106,7 +107,8 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
     plt.ylabel('Importance')
     plt.xlabel('Variable')
     plt.title(run_name + ' Variable Importances')
-
+    
+    plt.tight_layout()
     # ax = plt.axes()
     ax.xaxis.grid(False)  # remove just xaxis grid
 
