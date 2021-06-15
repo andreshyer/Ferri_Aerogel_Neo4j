@@ -227,8 +227,8 @@ class PseudoRelationship:
 class Gather:
 
     def __init__(self, nodes: list[PseudoNode], relationships: list[PseudoRelationship], bulk: bool = False,
-                 uri: str = "bolt://localhost:7687", auth: tuple = ("neo4j", "password"),
-                 apply_constraints: bool = True):
+                 uri: str = "bolt://localhost:7687", database: str = "neo4j",
+                 auth: tuple = ("neo4j", "password"), apply_constraints: bool = True):
         """
         This goal of this class is to take all the nodes and relationships, and create a query that can be passed into
         Neo4j. Also, the driver connection to Neo4j is not created until the function self.merge() is called. So, if
@@ -244,6 +244,7 @@ class Gather:
         self.nodes: list[PseudoNode] = nodes
         self.relationships: list[PseudoRelationship] = relationships
         self.uri: str = uri
+        self.database: str = database
         self.auth: tuple[str, str] = auth
         self.bulk: bool = bulk
         self.__constraints__: bool = apply_constraints
@@ -417,6 +418,7 @@ class Gather:
         # Insert queries if not bulk
         if not self.bulk:
             with driver.session() as session:
+                session = driver.session(database=self.database)
                 for query in self.queries:
                     session.write_transaction(__insert_data__, query)
             return
@@ -425,6 +427,7 @@ class Gather:
         i = 0
         rows_to_merge = []
         with driver.session() as session:
+            session = driver.session(database=self.database)
             for row in tqdm(rows, total=len(data), desc="Inserting data into Neo4j"):
                 rows_to_merge.append(row)
                 i += 1

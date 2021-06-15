@@ -72,13 +72,29 @@ if __name__ == "__main__":
     #                 'Average Pore Size (nm)']
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
+            'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
                     'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
     paper_id_column = 'paper_id'
 
 
-    # drop_columns.pop(len(drop_columns) - 1)
-    # paper_id_column = None
+    def test_if_has(row):
+        values = row.values
+        for value in values:
+            if value in si_precursor_subset:
+                return True
+        return False
+
+    si_precursor_subset = ['TEOS']
+    si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
+    data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]
+    data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]
+    data = data.loc[data['Surface Area (m2/g)'] < 1000]
+    data.reset_index(drop=True, inplace=True)
+    data.to_csv('testing_data.csv')
+
+
+    drop_columns.pop(len(drop_columns) - 1)
+    paper_id_column = None
 
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
@@ -87,7 +103,7 @@ if __name__ == "__main__":
     data = featurizer.replace_compounds_with_smiles()
     data = featurizer.featurize_molecules(method='rdkit2d')
     data = featurizer.replace_nan_with_zeros()
-    data.to_csv('testing_data.csv')
+    # data.to_csv('testing_data.csv')
 
     # data.to_csv('dev.csv')
     # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
@@ -100,39 +116,58 @@ if __name__ == "__main__":
     models = {'rf': RandomForestRegressor(), 'nn': MLPRegressor()}
     featurized_string = 'featurized'
 
+    splitter = DataSplitter(df=data, y_columns=y_columns,
+                            train_percent=0.8, test_percent=0.2, val_percent=0,
+                            grouping_column=paper_id_column, state=None)
+    x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+
+    x_scaler = deepcopy(scaler)
+    x_scaler.fit(x_train)
+    x_train = x_scaler.transform(x_train)
+    x_test = x_scaler.transform(x_test)
+
+    y_train = y_train.values.reshape(-1, 1)
+    y_test = y_test.values.reshape(-1, 1)
+
+    y_scaler = deepcopy(scaler)
+    y_scaler.fit(y_train)
+    y_train = y_scaler.transform(y_train).flatten()
+    y_test = y_scaler.transform(y_test).flatten()
+
+
     for scaler_name, scaler in scalers.items():
         for model_name, model in models.items():
 
-            subset_data = deepcopy(data)
+            # subset_data = deepcopy(data)
 
             # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
             # feature_importances, important_columns = complex_processor.get_only_important_columns(number_of_models=5)
             # subset_data = subset_data[important_columns]
 
-            splitter = DataSplitter(df=subset_data, y_columns=y_columns,
-                                    train_percent=0.8, test_percent=0.2, val_percent=0,
-                                    grouping_column=paper_id_column, state=None)
-            x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+            # splitter = DataSplitter(df=subset_data, y_columns=y_columns,
+            #                         train_percent=0.8, test_percent=0.2, val_percent=0,
+            #                         grouping_column=paper_id_column, state=None)
+            # x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
             # print(x_test)
 
             pva = DataFrame()
             pva['actual'] = y_test.values.tolist()
 
-            x_scaler = deepcopy(scaler)
-            x_scaler.fit(x_train)
-            x_train = x_scaler.transform(x_train)
-            x_test = x_scaler.transform(x_test)
+            # x_scaler = deepcopy(scaler)
+            # x_scaler.fit(x_train)
+            # x_train = x_scaler.transform(x_train)
+            # x_test = x_scaler.transform(x_test)
 
-            y_train = y_train.values.reshape(-1, 1)
-            y_test = y_test.values.reshape(-1, 1)
+            # y_train = y_train.values.reshape(-1, 1)
+            # y_test = y_test.values.reshape(-1, 1)
 
-            y_scaler = deepcopy(scaler)
-            y_scaler.fit(y_train)
-            y_train = y_scaler.transform(y_train).flatten()
-            y_test = y_scaler.transform(y_test).flatten()
+            # y_scaler = deepcopy(scaler)
+            # y_scaler.fit(y_train)
+            # y_train = y_scaler.transform(y_train).flatten()
+            # y_test = y_scaler.transform(y_test).flatten()
 
             predicted = DataFrame()
-            for i in tqdm(range(5), desc="Predicting on data"):
+            for i in tqdm(range(20), desc="Predicting on data"):
                 reg = deepcopy(model)
                 reg.fit(x_train, y_train)
                 y_predicted = reg.predict(x_test)

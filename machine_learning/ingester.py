@@ -20,9 +20,6 @@ class Ingester:
         self.raw_df: DataFrame = df
         self.df = df
 
-        # Drop columns that are all nan
-        self.df = self.df.dropna(axis=1, how='all')
-
         # Strip whitespace in DataFrame if there is any
         self.df: DataFrame = self.df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
@@ -38,11 +35,13 @@ class Ingester:
         # Drop and rows that do not have a value in the y_columns
         self.df = self.df.dropna(how='any', subset=y_columns)
 
-
         # Gather information in the compound info file
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
         self.compound_df: DataFrame = read_csv(compound_info_file)
         self.compound_dict: dict[str, str] = dict(zip(self.compound_df['compound'], self.compound_df['smiles']))
+
+        # Drop any columns that are all nan
+        self.df = self.df.dropna(axis=1, how='all')
 
         # Hold variable for sklearn-scaler
         self.scaler = None

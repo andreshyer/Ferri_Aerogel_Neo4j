@@ -13,6 +13,7 @@ class ReadSchema:
     def __init__(self, schema_file: str):
         # Set some default neo4j param stuff
         self.uri: str = "bolt://localhost:7687"
+        self.basebase = "neo4j"
         self.auth: tuple = ("neo4j", "password")
         self.apply_constraints: bool = True
         self.gathered: Optional[Gather] = None
@@ -202,8 +203,8 @@ class ReadSchema:
                                              merge_props=holding_rel['merge_props'],
                                              general_props=holding_rel['general_props'])
             rels.append(holding_rel)
-        self.gathered = Gather(nodes, rels, bulk=True, uri=self.uri, auth=self.auth,
-                               apply_constraints=self.apply_constraints)
+        self.gathered = Gather(nodes, rels, bulk=True, uri=self.uri, database=self.database,
+                               auth=self.auth, apply_constraints=self.apply_constraints)
         self.query = self.gathered.queries
         self.gathered.merge(df, batch=batch)
 
@@ -300,17 +301,18 @@ class ReadSchema:
                                                  general_props=general_props)
                         relationships.append(rel)
 
-                gathered = Gather(nodes, relationships, bulk=False, uri=self.uri, auth=self.auth,
-                                  apply_constraints=self.apply_constraints)
+                gathered = Gather(nodes, relationships, bulk=False, uri=self.uri, database=self.database,
+                                  auth=self.auth, apply_constraints=self.apply_constraints)
                 gathered.merge()
 
         sub_main(df)
 
-    def merge(self, df: DataFrame, uri: str = "bolt://localhost:7687",
+    def merge(self, df: DataFrame, uri: str = "bolt://localhost:7687", database: str = "neo4j",
               auth: tuple = ("neo4j", "password"), apply_constraints: bool = True, bulk: bool = None,
               suppress_warning: bool = False, batch: int = 1000):
 
         self.uri = uri
+        self.database = database
         self.auth = auth
         self.apply_constraints = apply_constraints
 
