@@ -64,18 +64,7 @@ def pva_graph(pva, run_name):
     # return plt
 
 
-if __name__ == "__main__":
-    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv"))
-    # y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
-    # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-    #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-    #                 'Average Pore Size (nm)']
-    y_columns = ['Surface Area (m2/g)']
-    drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-            'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
-    paper_id_column = 'paper_id'
-
+def cluster_data(data):
 
     def test_if_has(row):
         values = row.values
@@ -88,14 +77,27 @@ if __name__ == "__main__":
     si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
     data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]
     data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]
-    data = data.loc[data['Surface Area (m2/g)'] < 1000]
+    # data = data.loc[data['Surface Area (m2/g)'] < 1000]
     data.reset_index(drop=True, inplace=True)
-    data.to_csv('testing_data.csv')
+    return data
 
+
+if __name__ == "__main__":
+    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv"))
+    # y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
+    # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
+    #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
+    #                 'Average Pore Size (nm)']
+    y_columns = ['Surface Area (m2/g)']
+    drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
+            'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
+    paper_id_column = 'paper_id'
 
     drop_columns.pop(len(drop_columns) - 1)
     paper_id_column = None
 
+    data = cluster_data(data)
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
@@ -121,9 +123,9 @@ if __name__ == "__main__":
                             grouping_column=paper_id_column, state=None)
     x_test_m, x_train_m, x_val_m, y_test_m, y_train_m, y_val_m = splitter.split_data()
 
-    print(len(x_test_m), len(x_train_m), len(y_test_m), len(y_train_m))
+    # print(len(x_test_m), len(x_train_m), len(y_test_m), len(y_train_m))
 
-    raise Exception('test')
+    # raise Exception('test')
 
     # x_scaler = deepcopy(scaler)
     # x_scaler.fit(x_train)
