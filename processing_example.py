@@ -92,19 +92,18 @@ if __name__ == "__main__":
     # data = data[important_columns]
 
     splitter = DataSplitter(df=data, y_columns=y_columns,
-                            train_percent=0.8, test_percent=0.2, val_percent=0,
-                            grouping_column=paper_id_column, state=None)
-    x_test, x_train, y_test, y_train = splitter.split_data()
-    
+                            train_percent=0.8, test_percent=0.2, val_percent=0, grouping_column=None,state=None)
+    test_features, train_features, test_target, train_target = splitter.split_data()
+    print(len(train_features))    
     #x_test, x_train = Scaler().scale_data("std",x_test, x_train)
-    print(len(x_test), len(x_train), len(y_test), len(y_train))
+    #print(len(x_test), len(x_train), len(y_test), len(y_train))
 
     #grid = Grid.rf_bayes_grid()
     #tuner = HyperTune("rf", x_train, y_train, grid, opt_iter=50)
     #estimator, param, tune_score = tuner.hyper_tune(method="random")
-    #estimator = Regressor.get_regressor("gdb")
+    estimator = Regressor.get_regressor("xgb")
     
-    #predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg("gdb", estimator, x_train, x_test, y_train, y_test) 
+    predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg("xgb", estimator, train_features, train_target, test_features, test_target) 
 
     # pva = DataFrame()
     # pva['actual'] = y_test.values.tolist()
