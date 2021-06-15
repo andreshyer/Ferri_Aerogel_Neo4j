@@ -121,6 +121,10 @@ if __name__ == "__main__":
                             grouping_column=paper_id_column, state=None)
     x_test_m, x_train_m, x_val_m, y_test_m, y_train_m, y_val_m = splitter.split_data()
 
+    print(len(x_test_m), len(x_train_m), len(y_test_m), len(y_train_m))
+
+    raise Exception('test')
+
     # x_scaler = deepcopy(scaler)
     # x_scaler.fit(x_train)
     # x_train = x_scaler.transform(x_train)
