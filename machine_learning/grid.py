@@ -162,3 +162,13 @@ class Grid:
             'eta': Real(0.001, 0.1, 'log-uniform')
         }
         return bayes_grid
+
+    @staticmethod
+    def make_normal_grid(algorithm):
+        """ Dictionary containing all the grid functions. Can call specific function based off of dict key."""
+        grids = {'rf': Grid.rf_normal_grid,
+                 'gdb': Grid.gdb_normal_grid,
+                 'xgb': Grid.xgb_normal_grid
+                }
+        return grids[algorithm]()
+
