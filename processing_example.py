@@ -64,7 +64,7 @@ def pva_graph(pva, run_name):
 
 
 if __name__ == "__main__":
-    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv"))
+    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv"))
     # y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
     # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
     #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
     data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]
     data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]
-    data = data.loc[data['Surface Area (m2/g)'] < 1000]
+    #data = data.loc[data['Surface Area (m2/g)'] < 1000]
     data.reset_index(drop=True, inplace=True)
 
     drop_columns.pop(len(drop_columns) - 1)
@@ -108,9 +108,9 @@ if __name__ == "__main__":
     splitter = DataSplitter(df=data, y_columns=y_columns,
                             train_percent=0.8, test_percent=0.2, val_percent=0, grouping_column=None,state=None)
     test_features, train_features, test_target, train_target = splitter.split_data()
-    print(len(train_features))    
-    #x_test, x_train = Scaler().scale_data("std",x_test, x_train)
-    #print(len(x_test), len(x_train), len(y_test), len(y_train))
+    #print(len(train_features))    
+    test_features, train_features = Scaler().scale_data("std",train_features, test_features)
+    #print(len(train_features), len(test_features), len(train_target), len(test_target))
 
     #grid = Grid.rf_bayes_grid()
     #tuner = HyperTune("rf", x_train, y_train, grid, opt_iter=50)
