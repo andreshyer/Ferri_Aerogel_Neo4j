@@ -9,8 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 from matplotlib import cm
-
-from machine_learning import Featurizer, ComplexDataProcessor, DataSplitter
+from machine_learning import Featurizer, ComplexDataProcessor, DataSplitter, Scaler, HyperTune, Grid, Regressor, train
 
 
 def pva_graph(pva, run_name):
@@ -78,11 +77,11 @@ if __name__ == "__main__":
     featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
     featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
     featurizer.replace_compounds_with_smiles()
-    featurizer.featurize_molecules(method='rdkit2d')
+    #featurizer.featurize_molecules(method='rdkit2d')
     data = featurizer.replace_nan_with_zeros()
 
     # featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
-    # featurizer.replace_words_with_numbers(ignore_smiles=True)
+    featurizer.replace_words_with_numbers(ignore_smiles=False)
     # data = featurizer.replace_nan_with_zeros()
 
     # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
@@ -92,36 +91,46 @@ if __name__ == "__main__":
     splitter = DataSplitter(df=data, y_columns=y_columns,
                             train_percent=0.8, test_percent=0.2, val_percent=0,
                             grouping_column=paper_id_column, state=None)
-    x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+    x_test, x_train, y_test, y_train = splitter.split_data()
+    
+    x_test, x_train = Scaler().scale_data("std",x_test, x_train)
+    print(len(x_test), len(x_train), len(y_test), len(y_train))
 
-    pva = DataFrame()
-    pva['actual'] = y_test.values.tolist()
+    #grid = Grid.rf_bayes_grid()
+    #tuner = HyperTune("rf", x_train, y_train, grid, opt_iter=50)
+    #estimator, param, tune_score = tuner.hyper_tune(method="random")
+    estimator = Regressor.get_regressor("gdb")
+    
+    predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg("gdb", estimator, x_train, x_test, y_train, y_test) 
 
-    x_scaler = StandardScaler()
-    x_scaler.fit(x_train)
-    x_train = x_scaler.transform(x_train)
-    x_test = x_scaler.transform(x_test)
-
-    y_train = y_train.values.reshape(-1, 1)
-    y_test = y_test.values.reshape(-1, 1)
-
-    y_scaler = StandardScaler()
-    y_scaler.fit(y_train)
-    y_train = y_scaler.transform(y_train).flatten()
-    y_test = y_scaler.transform(y_test).flatten()
-
-    predicted = DataFrame()
-    for i in tqdm(range(100), desc="Predicting on data"):
-        reg = MLPRegressor()
-        reg.fit(x_train, y_train)
-        y_predicted = reg.predict(x_test)
-        y_predicted = y_scaler.inverse_transform(y_predicted)
-        predicted[f'predicted_{i}'] = y_predicted
-    predicted = DataFrame(predicted)
-    predicted_avg = predicted.mean(axis=1).tolist()
-    predicted_std = predicted.std(axis=1).tolist()
-
-    pva['pred_avg'] = predicted_avg
-    pva['pred_std'] = predicted_std
-
-    pva_graph(pva, "split_by_group_nn")
+    # pva = DataFrame()
+    # pva['actual'] = y_test.values.tolist()
+    #
+    # x_scaler = StandardScaler()
+    # x_scaler.fit(x_train)
+    # x_train = x_scaler.transform(x_train)
+    # x_test = x_scaler.transform(x_test)
+    #
+    # y_train = y_train.values.reshape(-1, 1)
+    # y_test = y_test.values.reshape(-1, 1)
+    #
+    # y_scaler = StandardScaler()
+    # y_scaler.fit(y_train)
+    # y_train = y_scaler.transform(y_train).flatten()
+    # y_test = y_scaler.transform(y_test).flatten()
+    #
+    # predicted = DataFrame()
+    # for i in tqdm(range(100), desc="Predicting on data"):
+    #     reg = MLPRegressor()
+    #     reg.fit(x_train, y_train)
+    #     y_predicted = reg.predict(x_test)
+    #     y_predicted = y_scaler.inverse_transform(y_predicted)
+    #     predicted[f'predicted_{i}'] = y_predicted
+    # predicted = DataFrame(predicted)
+    # predicted_avg = predicted.mean(axis=1).tolist()
+    # predicted_std = predicted.std(axis=1).tolist()
+    #
+    # pva['pred_avg'] = predicted_avg
+    # pva['pred_std'] = predicted_std
+    #
+    # pva_graph(pva, "split_by_group_nn")
