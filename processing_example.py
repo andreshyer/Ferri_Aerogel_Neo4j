@@ -1,11 +1,12 @@
 from pathlib import Path
 from tqdm import tqdm
+from copy import deepcopy
 
 import numpy as np
 from pandas import DataFrame, read_csv, concat
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -63,7 +64,7 @@ def pva_graph(pva, run_name):
 
 
 if __name__ == "__main__":
-    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv"))
+    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv"))
     # y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
     # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
     #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
@@ -74,15 +75,17 @@ if __name__ == "__main__":
                     'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
     paper_id_column = 'paper_id'
 
-    featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
-    featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
-    featurizer.replace_compounds_with_smiles()
-    #featurizer.featurize_molecules(method='rdkit2d')
+    # drop_columns.pop(len(drop_columns) - 1)
+    # paper_id_column = None
+
+    featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
+    data = featurizer.remove_xerogels()
+    data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
+    data = featurizer.replace_compounds_with_smiles()
+    data = featurizer.featurize_molecules(method='rdkit2d')
+
     data = featurizer.replace_nan_with_zeros()
 
-    # featurizer = Featurizer(df=data, columns_to_drop=drop_columns)
-    featurizer.replace_words_with_numbers(ignore_smiles=False)
-    # data = featurizer.replace_nan_with_zeros()
 
     # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
     # feature_importances, important_columns = complex_processor.get_only_important_columns(number_of_models=5)
