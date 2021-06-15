@@ -119,20 +119,20 @@ if __name__ == "__main__":
     splitter = DataSplitter(df=data, y_columns=y_columns,
                             train_percent=0.8, test_percent=0.2, val_percent=0,
                             grouping_column=paper_id_column, state=None)
-    x_test, x_train, x_val, y_test, y_train, y_val = splitter.split_data()
+    x_test_m, x_train_m, x_val_m, y_test_m, y_train_m, y_val_m = splitter.split_data()
 
-    x_scaler = deepcopy(scaler)
-    x_scaler.fit(x_train)
-    x_train = x_scaler.transform(x_train)
-    x_test = x_scaler.transform(x_test)
+    # x_scaler = deepcopy(scaler)
+    # x_scaler.fit(x_train)
+    # x_train = x_scaler.transform(x_train)
+    # x_test = x_scaler.transform(x_test)
 
-    y_train = y_train.values.reshape(-1, 1)
-    y_test = y_test.values.reshape(-1, 1)
+    # y_train = y_train.values.reshape(-1, 1)
+    # y_test = y_test.values.reshape(-1, 1)
 
-    y_scaler = deepcopy(scaler)
-    y_scaler.fit(y_train)
-    y_train = y_scaler.transform(y_train).flatten()
-    y_test = y_scaler.transform(y_test).flatten()
+    # y_scaler = deepcopy(scaler)
+    # y_scaler.fit(y_train)
+    # y_train = y_scaler.transform(y_train).flatten()
+    # y_test = y_scaler.transform(y_test).flatten()
 
 
     for scaler_name, scaler in scalers.items():
@@ -151,20 +151,20 @@ if __name__ == "__main__":
             # print(x_test)
 
             pva = DataFrame()
-            pva['actual'] = y_test.values.tolist()
+            pva['actual'] = y_test_m.values.tolist()
 
-            # x_scaler = deepcopy(scaler)
-            # x_scaler.fit(x_train)
-            # x_train = x_scaler.transform(x_train)
-            # x_test = x_scaler.transform(x_test)
+            x_scaler = deepcopy(scaler)
+            x_scaler.fit(x_train_m)
+            x_train = x_scaler.transform(x_train_m)
+            x_test = x_scaler.transform(x_test_m)
 
-            # y_train = y_train.values.reshape(-1, 1)
-            # y_test = y_test.values.reshape(-1, 1)
+            y_train = y_train_m.values.reshape(-1, 1)
+            y_test = y_test_m.values.reshape(-1, 1)
 
-            # y_scaler = deepcopy(scaler)
-            # y_scaler.fit(y_train)
-            # y_train = y_scaler.transform(y_train).flatten()
-            # y_test = y_scaler.transform(y_test).flatten()
+            y_scaler = deepcopy(scaler)
+            y_scaler.fit(y_train)
+            y_train = y_scaler.transform(y_train).flatten()
+            y_test = y_scaler.transform(y_test).flatten()
 
             predicted = DataFrame()
             for i in tqdm(range(20), desc="Predicting on data"):
