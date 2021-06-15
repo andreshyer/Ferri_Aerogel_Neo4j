@@ -22,7 +22,7 @@ def train_reg(algorithm, estimator, train_features, train_target, test_features,
     pva = pd.DataFrame([], columns=['actual', 'predicted'])
 
     for i in range(n):
-
+        
         if algorithm == "nn":
             estimator.fit(train_features, train_target, **fit_params)
 
@@ -43,24 +43,24 @@ def train_reg(algorithm, estimator, train_features, train_target, test_features,
     
     pva_scaled = pva
     # Holding variables for scaled data
-    scaled_r2 = np.empty(n)
-    scaled_mse = np.empty(n)
-    scaled_rmse = np.empty(n)
+    scaled_r2 = np.empty(n+1)
+    scaled_mse = np.empty(n+1)
+    scaled_rmse = np.empty(n+1)
     
     data_max = max(pva_scaled.max())  # Find abs min/max of predicted data
     data_min = min(pva_scaled.min())
 
     # Logic to scale the predicted data, using min/max scaling
     pva_scaled = (pva_scaled - data_min) / (data_max - data_min)
-    predicted_columns = pva.columns.difference(['actual'])
-
+    predicted_columns = pva_scaled.columns.difference(['actual'])
+    #pva_scaled.to_csv("test_pva_scaled.csv")
     # Calculate r2, rmse, mse or for each pva columns
     for i, predicted_column in enumerate(predicted_columns):
         scaled_r2[i] = r2_score(pva_scaled['actual'], pva_scaled[predicted_column])
         scaled_mse[i] = mean_squared_error(pva_scaled['actual'], pva_scaled[predicted_column])
         scaled_rmse[i] = np.sqrt(scaled_mse[i])
     
-    
+    #print(np.isnan(scaled_r2).any()) 
     #Gather MSE, RMSE, and STD for each molecule in the predictions and scaled_predictions csv files
     def __gather_column_stats__(pva_df):
         pva_df['pred_avg'] = pva_df[predicted_columns].mean(axis=1)

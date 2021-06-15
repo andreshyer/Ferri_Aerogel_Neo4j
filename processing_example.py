@@ -71,12 +71,26 @@ if __name__ == "__main__":
     #                 'Average Pore Size (nm)']
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
+            'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
                     'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
     paper_id_column = 'paper_id'
 
-    # drop_columns.pop(len(drop_columns) - 1)
-    # paper_id_column = None
+
+    def test_if_has(row):
+        values = row.values
+        for value in values:
+            if value in si_precursor_subset:
+                return True
+        return False
+
+    si_precursor_subset = ['TEOS']
+    si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
+    data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]
+    data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]
+    data = data.loc[data['Surface Area (m2/g)'] < 1000]
+    data.reset_index(drop=True, inplace=True)
+
+    drop_columns.pop(len(drop_columns) - 1)
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
@@ -85,7 +99,7 @@ if __name__ == "__main__":
     data = featurizer.featurize_molecules(method='rdkit2d')
 
     data = featurizer.replace_nan_with_zeros()
-
+    # data.to_csv('testing_data.csv')
 
     # complex_processor = ComplexDataProcessor(df=data, y_columns=y_columns)
     # feature_importances, important_columns = complex_processor.get_only_important_columns(number_of_models=5)

@@ -25,7 +25,7 @@ class Regressor:
                    'xgb': XGBRegressor
                    }                    
         if algorithm in skl_regs.keys():
-            print(algorithm)
+            #print(algorithm)
             if call:
                 estimator = skl_regs[algorithm]
             else:
