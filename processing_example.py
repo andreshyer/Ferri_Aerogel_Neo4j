@@ -64,7 +64,7 @@ def pva_graph(pva, run_name):
 
 
 if __name__ == "__main__":
-    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv"))
+    data = read_csv(str(Path(__file__).parent / "files/si_aerogels/si_aerogel_AI_machine_readable.csv"))
     # y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
     # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
     #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
@@ -96,15 +96,15 @@ if __name__ == "__main__":
                             grouping_column=paper_id_column, state=None)
     x_test, x_train, y_test, y_train = splitter.split_data()
     
-    x_test, x_train = Scaler().scale_data("std",x_test, x_train)
+    #x_test, x_train = Scaler().scale_data("std",x_test, x_train)
     print(len(x_test), len(x_train), len(y_test), len(y_train))
 
     #grid = Grid.rf_bayes_grid()
     #tuner = HyperTune("rf", x_train, y_train, grid, opt_iter=50)
     #estimator, param, tune_score = tuner.hyper_tune(method="random")
-    estimator = Regressor.get_regressor("gdb")
+    #estimator = Regressor.get_regressor("gdb")
     
-    predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg("gdb", estimator, x_train, x_test, y_train, y_test) 
+    #predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg("gdb", estimator, x_train, x_test, y_train, y_test) 
 
     # pva = DataFrame()
     # pva['actual'] = y_test.values.tolist()
