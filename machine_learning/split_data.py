@@ -155,5 +155,8 @@ class DataSplitter:
             x_val, y_val = self.__reshape_df__(x_val), self.__reshape_df__(y_val)
 
         x_test, x_train, x_val = np.array(x_test), np.array(x_train), np.array(x_val)
-
-        return x_test, x_train, x_val, y_test, y_train, y_val
+        
+        if self.val_percent == 0.0:
+            return x_test, x_train, y_test, y_train
+        else:
+            return  x_test, x_train, x_val, y_test, y_train, y_val
