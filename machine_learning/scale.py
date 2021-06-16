@@ -3,7 +3,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class Scaler:
     @staticmethod
-    def scale_data(scale, x_test, x_train, x_val=None):
+    def scale_data(scale, train_features, test_features, val_features=None):
         """
         Description: Scale train, test, split data according to the :param scale.
         :param x_test: test feature
@@ -21,9 +21,9 @@ class Scaler:
             Exception("No option " + scale + " for data scaling")
 
         if scale is not None:
-            x_train = scale.fit_transform(x_train)
-            x_test = scale.transform(x_test)
-            if x_val is not None:
-                x_val = scale.transform(x_val)
-                return x_test, x_train, x_val
-        return x_test, x_train
+            train_features = scale.fit_transform(train_features)
+            test_features = scale.transform(test_features)
+            if val_features is not None:
+                val_features = scale.transform(val_features)
+                return test_features, train_features, val_features
+        return test_features, train_features
