@@ -4,6 +4,7 @@ from warnings import warn
 from tqdm import tqdm
 from ast import literal_eval
 
+from numpy import nan
 from pandas import DataFrame
 from neo4j import GraphDatabase
 
@@ -350,7 +351,7 @@ class Gather:
             rel_index = self.__indexed_relationships__[relationship]
             rel_name = relationship.rel_name
             direction = relationship.__rel__[2]
-            formatted_string, merge_props_str = __format_merge_props__(relationship.merge_props_dict, self.bulk,
+            rel_df_column, merge_props_str = __format_merge_props__(relationship.merge_props_dict, self.bulk,
                                                                        class_type='Relationship')
             general_props_str = __format_general_props__(self.__indexed_relationships__[relationship],
                                                          relationship.general_props_dict, self.bulk)
@@ -361,17 +362,34 @@ class Gather:
             right_node_merge_props = __format_merge_props__(relationship.__rel__[1].merge_props_dict,
                                                             self.bulk, class_type='Node')
 
+            if rel_df_column:
+                line = "\nWITH row"
+                line += f"\n    WHERE NOT row.`{left_node_df_col}` IS NULL"
+                line += f"\n    AND NOT row.`{right_node_df_col}` IS NULL"
+                line += f"\n    AND NOT row.`{rel_df_column}` IS NULL"
+                line += f"\n    MATCH ({left_node_index}: {left_node_node_name}{left_node_merge_props})"
+                line += f"\n    MATCH ({right_node_index}: {right_node_node_name}{right_node_merge_props})"
+                line += f"\n    MERGE ({left_node_index})-[{rel_index}: {rel_name}{merge_props_str}]-{direction}({right_node_index})"
+                if general_props_str:
+                    line += f"\n    {general_props_str}"
+                line += "\n"
+                rels_query += line
+
             line = "\nWITH row"
             line += f"\n    WHERE NOT row.`{left_node_df_col}` IS NULL"
             line += f"\n    AND NOT row.`{right_node_df_col}` IS NULL"
             line += f"\n    MATCH ({left_node_index}: {left_node_node_name}{left_node_merge_props})"
             line += f"\n    MATCH ({right_node_index}: {right_node_node_name}{right_node_merge_props})"
-            line += f"\n    MERGE ({left_node_index})-[{rel_index}: {rel_name}{merge_props_str}]-{direction}({right_node_index})"
+            line += f"\n    MERGE ({left_node_index})-[{rel_index}: {rel_name}]-{direction}({right_node_index})"
             if general_props_str:
                 line += f"\n    {general_props_str}"
             line += "\n"
+
             rels_query += line
         rels_query = rels_query.strip()
+
+        # print(rels_query)
+        # raise Exception('stop')
 
         return nodes_query, rels_query
 
@@ -436,6 +454,7 @@ class Gather:
         rows = None
         if isinstance(data, DataFrame):
             if not data.empty:
+                data = data.replace(nan, '', regex=True)  # Convert nan to empty string
                 rows = data.to_dict('records')
             else:
                 raise Exception("bulk was set to true, but no data was passed")
