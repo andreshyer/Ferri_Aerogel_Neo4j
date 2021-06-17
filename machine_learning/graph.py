@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 import pandas as pd
+from xgboost import plot_importance
 
 
 def pva_graph(predictions_stats, predictions,run_name):
@@ -64,55 +65,51 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
     importance (I might need to double check on that). I'm also limiting this to only rdkit2d since the rest are only 0s
     and 1s
     """
-    if algorithm not in ["xgb", "nn"]:
-        pass
-    else:
+    if algorithm == "nn":
         Exception("Don't use this feature importance function for " + algorithm)
+    else:
+        # Get numerical feature importances
+        if algorithm == "xgb":
+            estimator.get_booster().feature_names = feature_list
 
-    # Get numerical feature importances
+            #plot_importance(estimator, max_num_features=20, importance_type='gain')
+            #plt.savefig(run_name + '_importance-graph.png')
 
-    importances2 = estimator.feature_importances_  # used later for graph
-    # List of tuples with variable and importance
-    feature_importances = [(feature, round(importance, 2)) for feature, importance in
-                               zip(feature_list, list(importances2))]
+            importance = estimator.get_booster().get_score(importance_type="weight")
+            print(importance)
+            tuples = [(k, importance[k]) for k in importance]
+            tuples = sorted(tuples, key=lambda x: x[1])[-20:]
 
-    # Sort the feature importances by most important first
-    feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
-#     if len(feature_importances) > 100:
-#     feature_importances = feature_importances[:30]
-#     print(feature_importances)
-    # Print out the feature and importances
-    # [print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+        else:
+        
+            importances2 = estimator.feature_importances_  # used later for graph
+            indicies = (-importances2).argsort()
+            print(importances2)
+            varimp = pd.DataFrame([], columns=['variable', 'importance'])
+            varimp['variable'] = [feature_list[i] for i in indicies]
+            varimp['importance'] = importances2[indicies]
+            # Importance Bar Graph
+            plt.rcParams['figure.figsize'] = [15, 9]
 
-    # prepare importance data for export and graphing
-    indicies = (-importances2).argsort()
+            # Set the style
+            plt.style.use('bmh')
+            varimp = varimp.head(30)
+            # intiate plot (mwahaha)
+            fig, ax = plt.subplots()
+            plt.bar(varimp.index, varimp['importance'], orientation='vertical')
 
-    varimp = pd.DataFrame([], columns=['variable', 'importance'])
-    varimp['variable'] = [feature_list[i] for i in indicies]
-    varimp['importance'] = importances2[indicies]
-    # Importance Bar Graph
-    plt.rcParams['figure.figsize'] = [15, 9]
+            # Tick labels for x axis
+            plt.xticks(varimp.index, varimp['variable'], rotation='vertical')
 
-    # Set the style
-    plt.style.use('bmh')
-    varimp = varimp.head(30)
-    # intiate plot (mwahaha)
-    fig, ax = plt.subplots()
-    plt.bar(varimp.index, varimp['importance'], orientation='vertical')
-
-    # Tick labels for x axis
-    plt.xticks(varimp.index, varimp['variable'], rotation='vertical')
-
-    # Axis labels and title
-    plt.ylabel('Importance')
-    plt.xlabel('Variable')
-    plt.title(run_name + ' Variable Importances')
+            # Axis labels and title
+            plt.ylabel('Importance')
+            plt.xlabel('Variable')
+            plt.title(run_name + ' Variable Importances')
+     
+            plt.tight_layout()
+            # ax = plt.axes()
+            ax.xaxis.grid(False)  # remove just xaxis grid
     
-    plt.tight_layout()
-    # ax = plt.axes()
-    ax.xaxis.grid(False)  # remove just xaxis grid
-
-    plt.savefig(run_name + '_importance-graph.png')
-#     plt.close()
-    # self.impgraph = plt
-    varimp = varimp
+            plt.savefig(run_name + '_importance-graph.png')
+            # plt.close()
+            # self.impgraph = plt
