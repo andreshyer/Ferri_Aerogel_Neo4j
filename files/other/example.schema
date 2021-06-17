@@ -47,7 +47,7 @@ Rel|p->c|LivesIn  # Define as Relationship | node 1 direction ("->"" or "-") nod
 
 Node|cl|Clothing  # Note this will not be created for Leo or John
     -name: clothing
-    -type: clothing ! type # Use ! to state that if this is the only non-None property, dont create Node
+    -type: clothing type
 
 Rel|p->cl|Wears  # Thus this relationships will not be merged for Leo or John
 
