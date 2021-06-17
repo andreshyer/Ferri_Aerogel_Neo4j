@@ -216,6 +216,5 @@ class Featurizer(Ingester):
 
         self.df.reset_index(drop=True, inplace=True)  # Reset the indexes for the dataframes
         featurized_df.reset_index(drop=True, inplace=True)
-        
         self.df = concat((self.df, featurized_df), axis=1)  # Concat the main df to the featurized df
         return self.df
