@@ -21,3 +21,4 @@ dependencies:
       - pandas-flavor==0.2.0
       - git+https://github.com/dmlc/xgboost.git
       - git+https://github.com/keras-team/keras.git
+      - git+https://github.com/slundberg/shap.git
