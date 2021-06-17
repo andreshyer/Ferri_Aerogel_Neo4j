@@ -151,12 +151,13 @@ class DataSplitter:
         # Verify the arrays are the correct shape
         test_features, test_target = self.__reshape_df__(test_features), self.__reshape_df__(test_target)
         train_features, train_target = self.__reshape_df__(train_features), self.__reshape_df__(train_target)
+        feature_list = list(train_features.columns)
         if isinstance(val_features, DataFrame):  # If val sets are not
             val_features, val_target = self.__reshape_df__(val_features), self.__reshape_df__(val_target)
 
         test_features, train_features, val_features = np.array(test_features), np.array(train_features), np.array(val_features)
         
         if self.val_percent == 0.0:
-            return test_features, train_features, test_target, train_target
+            return test_features, train_features, test_target, train_target, feature_list
         else:
-            return test_features, train_features, val_features, test_target, train_target, val_target
+            return test_features, train_features, val_features, test_target, train_target, val_target, feature_list
