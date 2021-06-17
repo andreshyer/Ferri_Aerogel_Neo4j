@@ -73,11 +73,23 @@ def cluster_data(data):
                 return True
         return False
 
+    def reject_outliers(value):
+        if abs(value - mean_surface_area) < (3 * std_surface_area):
+            return True
+        return False
+
     si_precursor_subset = ['TEOS']
     si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
-    data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]
-    data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]
+    data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]  # Grab Aerogels with TEOS
+    data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]  # Grab sol-gel aerogels
+    data = data.loc[data['Formation Method (1)'].isin([np.nan])]  # Make sure that is the only formation method
+
+    # Remove outliers
+    mean_surface_area = data['Surface Area (m2/g)'].mean()
+    std_surface_area = data['Surface Area (m2/g)'].std()
+    data = data.loc[data['Surface Area (m2/g)'].apply(reject_outliers)]
     # data = data.loc[data['Surface Area (m2/g)'] < 1000]
+
     data.reset_index(drop=True, inplace=True)
     return data
 
@@ -88,16 +100,19 @@ if __name__ == "__main__":
     # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
     #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
     #                 'Average Pore Size (nm)']
+
+    state = 20
+
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-            'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
+                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
                     'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
     paper_id_column = 'paper_id'
 
-    drop_columns.pop(len(drop_columns) - 1)
-    paper_id_column = None
+    # drop_columns.append(paper_id_column)
+    # paper_id_column = None
 
-    data = cluster_data(data)
+    # data = cluster_data(data)
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
@@ -120,7 +135,7 @@ if __name__ == "__main__":
 
     splitter = DataSplitter(df=data, y_columns=y_columns,
                             train_percent=0.8, test_percent=0.2, val_percent=0,
-                            grouping_column=paper_id_column, state=None)
+                            grouping_column=paper_id_column, state=state)
     x_test_m, x_train_m, x_val_m, y_test_m, y_train_m, y_val_m = splitter.split_data()
 
     # print(len(x_test_m), len(x_train_m), len(y_test_m), len(y_train_m))
