@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 
 
-def train_reg(algorithm, estimator, train_features, train_target, test_features, test_target, fit_params=None, n=5):
+def train_reg(algorithm, estimator, train_features, train_target, 
+              test_features, test_target, fit_params=None, n=5, run_name=None):
     """
 
     :param algorithm:
@@ -15,6 +16,7 @@ def train_reg(algorithm, estimator, train_features, train_target, test_features,
     :param test_target:
     :param fit_params:
     :param n:
+    :param run_name:
     :return:
     """
 
@@ -106,5 +108,9 @@ def train_reg(algorithm, estimator, train_features, train_target, test_features,
             
     scaled_predictions = pva_scaled
     scaled_predictions_stats = scaled_stats
-                    
+    
+    if run_name is not None:
+        predictions.to_csv(run_name + "_predictions.csv")
+        scaled_predictions.to_csv(run_name + "_scaled_predictions.csv")
+
     return predictions, predictions_stats, scaled_predictions, scaled_predictions_stats
