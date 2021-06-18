@@ -4,8 +4,7 @@ from warnings import warn
 from tqdm import tqdm
 from ast import literal_eval
 
-from numpy import nan
-from pandas import DataFrame
+from pandas import DataFrame, notnull
 from neo4j import GraphDatabase
 
 
@@ -257,7 +256,7 @@ class Gather:
         self.__indexed_nodes__: dict[PseudoNode, str] = self.__index_nodes__()
         self.__indexed_relationships__: dict[PseudoRelationship, str] = self.__index_relationships__()
         if self.bulk:
-            self.nodes_query, self.rels_query = self.__generate_bulk_query__()  # Just one query needed for bulk
+            self.queries = self.__generate_bulk_query__()  # Just one query needed for bulk
         else:
             self.queries: list[str] = self.__generate_non_bulk_queries__()
 
@@ -318,7 +317,7 @@ class Gather:
         """
 
         # Generate query header
-        nodes_query = "UNWIND $rows as row"
+        queries = []
 
         # Generate node section
         for node in self.nodes:
@@ -327,17 +326,13 @@ class Gather:
                                                                      class_type='Node')
             general_props_str = __format_general_props__(self.__indexed_nodes__[node],
                                                          node.general_props_dict, self.bulk)
-            line = "\nWITH row"
-            line += f"\n    WHERE NOT row.`{df_column_name}` IS NULL"
-            line += f"\n    MERGE ({node_index}: {node.node_name}{merge_props_str})"
+            node_query = "UNWIND $rows as row"
+            node_query += "\nWITH row"
+            node_query += f"\n    WHERE row.`{df_column_name}` IS NOT NULL"
+            node_query += f"\n    MERGE ({node_index}: {node.node_name}{merge_props_str})"
             if general_props_str:
-                line += f"\n    {general_props_str}"
-            line += f"\n"
-
-            nodes_query += line
-        nodes_query = nodes_query.strip()
-
-        rels_query = "UNWIND $rows as row"  # Separate Node and Relationship sections
+                node_query += f"\n    {general_props_str}"
+            queries.append(node_query)
 
         # Generate relationship section
         for relationship in self.relationships:
@@ -363,7 +358,8 @@ class Gather:
                                                             self.bulk, class_type='Node')
 
             if rel_df_column:
-                line = "\nWITH row"
+                line = "UNWIND $rows as row"
+                line += "\nWITH row"
                 line += f"\n    WHERE NOT row.`{left_node_df_col}` IS NULL"
                 line += f"\n    AND NOT row.`{right_node_df_col}` IS NULL"
                 line += f"\n    AND NOT row.`{rel_df_column}` IS NULL"
@@ -372,10 +368,10 @@ class Gather:
                 line += f"\n    MERGE ({left_node_index})-[{rel_index}: {rel_name}{merge_props_str}]-{direction}({right_node_index})"
                 if general_props_str:
                     line += f"\n    {general_props_str}"
-                line += "\n"
-                rels_query += line
+                queries.append(line)
 
-            line = "\nWITH row"
+            line = "UNWIND $rows as row"
+            line += "\nWITH row"
             line += f"\n    WHERE NOT row.`{left_node_df_col}` IS NULL"
             line += f"\n    AND NOT row.`{right_node_df_col}` IS NULL"
             line += f"\n    MATCH ({left_node_index}: {left_node_node_name}{left_node_merge_props})"
@@ -383,22 +379,20 @@ class Gather:
             line += f"\n    MERGE ({left_node_index})-[{rel_index}: {rel_name}]-{direction}({right_node_index})"
             if general_props_str:
                 line += f"\n    {general_props_str}"
-            line += "\n"
+            queries.append(line)
 
-            rels_query += line
-        rels_query = rels_query.strip()
-
+        # print(nodes_query)
         # print(rels_query)
         # raise Exception('stop')
 
-        return nodes_query, rels_query
+        return queries
 
     def __generate_non_bulk_queries__(self):
 
         queries = []
 
         for node in self.nodes:
-            merge_props_str = __format_merge_props__(node.merge_props_dict, self.bulk, class_type='Node')
+            _, merge_props_str = __format_merge_props__(node.merge_props_dict, self.bulk, class_type='Node')
             query = f"\nMERGE ({self.__indexed_nodes__[node]}:{node.node_name}{merge_props_str})"
             general_props_str = __format_general_props__(self.__indexed_nodes__[node],
                                                          node.general_props_dict, self.bulk)
@@ -408,7 +402,7 @@ class Gather:
 
         for rel in self.relationships:
             rel_id = self.__indexed_relationships__[rel]
-            merge_props_str = __format_merge_props__(rel.merge_props_dict, self.bulk, class_type='Relationship')
+            _, merge_props_str = __format_merge_props__(rel.merge_props_dict, self.bulk, class_type='Relationship')
             general_props_str = __format_general_props__(rel_id, rel.general_props_dict, self.bulk)
             rel_name = rel.rel_name
 
@@ -416,15 +410,15 @@ class Gather:
             direction = rel[2]
             node_1_id = self.__indexed_nodes__[rel[0]]
             node_1_name = rel[0].node_name
-            node_1_merge_props = __format_merge_props__(rel[0].merge_props_dict, self.bulk, class_type='Node')
+            _, node_1_merge_props = __format_merge_props__(rel[0].merge_props_dict, self.bulk, class_type='Node')
             node_2_id = self.__indexed_nodes__[rel[1]]
             node_2_name = rel[1].node_name
-            node_2_merge_props = __format_merge_props__(rel[1].merge_props_dict, self.bulk, class_type='Node')
+            _, node_2_merge_props = __format_merge_props__(rel[1].merge_props_dict, self.bulk, class_type='Node')
 
             query = f"""
             MATCH ({node_1_id}: {node_1_name}{node_1_merge_props})
             MATCH ({node_2_id}: {node_2_name}{node_2_merge_props})
-            
+
             MERGE ({node_1_id})-[{rel_id}: {rel_name}{merge_props_str}]-{direction}({node_2_id})
             {general_props_str}
             """
@@ -454,8 +448,10 @@ class Gather:
         rows = None
         if isinstance(data, DataFrame):
             if not data.empty:
-                data = data.replace(nan, '', regex=True)  # Convert nan to empty string
+                data = data.where(notnull(data), None)  # Convert nan to None
                 rows = data.to_dict('records')
+                # print(rows[0])
+                # raise Exception('stop')
             else:
                 raise Exception("bulk was set to true, but no data was passed")
 
@@ -478,13 +474,13 @@ class Gather:
                 rows_to_merge.append(row)
                 i += 1
                 if i % batch == 0:
-                    session.write_transaction(__insert_data__, self.nodes_query)
-                    session.write_transaction(__insert_data__, self.rels_query)
-                    rows_to_merge = []
-                    i = 0
+                    for query in self.queries:
+                        session.write_transaction(__insert_data__, query)
+                        rows_to_merge = []
+                        i = 0
             if rows_to_merge:
-                session.write_transaction(__insert_data__, self.nodes_query)
-                session.write_transaction(__insert_data__, self.rels_query)
+                for query in tqdm(self.queries, desc="Loading in bulk queries with data"):
+                    session.write_transaction(__insert_data__, query)
 
     def __apply_constraints__(self):
         """

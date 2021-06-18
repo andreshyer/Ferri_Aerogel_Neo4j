@@ -14,3 +14,4 @@ if __name__ == "__main__":
     schema_obj = ReadSchema(schema_file=schema)
     schema_obj.merge(df=df, uri=port, database=database,
                      auth=(username, password), apply_constraints=True, bulk=True)
+
