@@ -8,7 +8,7 @@ from skopt import callbacks
 
 class HyperTune:
     """
-    TODO: Fix hypertune. Getting errors after tuning
+    TODO: Make sure Bayes work
     """
     def __init__(self, algorithm, train_features, train_target, param_grid, opt_iter=10, n_jobs=3, 
                  cv_folds=3, scoring="neg_mean_squared_error", deltay=None,fit_params=None):
@@ -24,8 +24,6 @@ class HyperTune:
         self.scoring = scoring
         self.deltay = deltay
         self.fit_params = fit_params
-        self.cp_delta = float((0.05 - min(self.train_target.min()))/(max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
-        self.n_best = 5
     
     def hyper_tune(self, method="random"):
         """
@@ -47,7 +45,10 @@ class HyperTune:
                                            cv=self.cv_folds  # number of cross-val folds to use                                                                                        
                                           )
             
-            callback = callbacks.DeltaYStopper(self.cp_delta, self.n_best)
+            cp_delta = float((0.05 - min(self.train_target.min()))/(max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
+
+            n_best = 5
+            callback = callbacks.DeltaYStopper(cp_delta, n_best)
             tune_algorithm.fit(self.train_features, self.train_target, callback=callback)
 
         else:
