@@ -19,6 +19,8 @@ class ReadSchema:
         self.gathered: Optional[Gather] = None
         self.query: str = ""
 
+        print("Parsing Schema File")
+
         # Parse information from schema file
         self.file: str = schema_file
         self.lines: list[str] = self.__gather_sig_lines__()
@@ -61,7 +63,6 @@ class ReadSchema:
         merge_prop = False
         general_prop = False
         unique_prop = False
-        lonely_prop = False
         strict_prop = False
 
         # Look for tags
@@ -69,9 +70,6 @@ class ReadSchema:
             prop = prop.strip()
             if prop[-1] == '*':  # unique prop
                 unique_prop = True
-                prop = prop[:-1]
-            elif prop[-1] == '!':  # lonely prop
-                lonely_prop = True
                 prop = prop[:-1]
             elif "{" in prop and "}" in prop:
                 if prop.split(":")[1].strip()[0] == "{" and prop.split(":")[1].strip()[-1] == "}":  # strict prop
@@ -99,8 +97,6 @@ class ReadSchema:
         # Tack on additional prop information
         if unique_prop:
             prop_dict['unique_props'].append(neo4j_key)
-        if lonely_prop:
-            prop_dict['lonely_props'].append(neo4j_key)
         if strict_prop:
             prop_dict['strict_props'].append(neo4j_key)
 
@@ -108,8 +104,7 @@ class ReadSchema:
 
     def __parse_props__(self, entity):
         prop_dict = {'merge_props': {}, 'general_props': {},
-                     'unique_props': [], 'lonely_props': [],
-                     'strict_props': []}
+                     'unique_props': [], 'strict_props': []}
         for prop in entity:
             prop_dict = self.__parse_prop__(prop_dict, prop)
         return prop_dict
@@ -157,7 +152,7 @@ class ReadSchema:
                 # Gather property information
                 rel_props_dict = self.__parse_props__(entity)
 
-                # Create holding relationship, note that this drops unique and lonely props
+                # Create holding relationship, note that this drops unique props
                 relationships.append({"name": rel_name, "node_1": rel_node_1, "direction": direction,
                                       "node_2": rel_node_2, "merge_props": rel_props_dict['merge_props'],
                                       "general_props": rel_props_dict['general_props'],
@@ -166,8 +161,6 @@ class ReadSchema:
                 # Warn user that * and ! tags were dropped in relationships if found
                 if rel_props_dict['unique_props']:
                     warn(f"* tag detected on relationship {header}. The * tag has been ignored.")
-                if rel_props_dict['lonely_props']:
-                    warn(f"! tag detected on relationship {header}. The ! tag has been ignored.")
         return relationships
 
     def __determine_bulk__(self):
@@ -181,8 +174,6 @@ class ReadSchema:
         bulk = True
         for node, node_props in self.holding_nodes.items():
             if not node_props['merge_props']:
-                bulk = False
-            if node_props['lonely_props']:
                 bulk = False
         return bulk
 
@@ -205,7 +196,6 @@ class ReadSchema:
             rels.append(holding_rel)
         self.gathered = Gather(nodes, rels, bulk=True, uri=self.uri, database=self.database,
                                auth=self.auth, apply_constraints=self.apply_constraints)
-        self.query = self.gathered.queries
         self.gathered.merge(df, batch=batch)
 
     def __merge_non_bulk__(self, df: DataFrame):
@@ -251,20 +241,6 @@ class ReadSchema:
                 value = __pseudo_literal_eval__(value)
                 general_props[neo4j_key] = value
             general_props = __drop_none_prop_values__(general_props, supress_warning=True)
-
-            if entity_type == 'node':
-
-                all_props = merge_props.copy()
-                all_props.update(general_props)
-
-                all_lonely_props = True
-                for prop_key in all_props:
-                    if prop_key not in entity['lonely_props']:
-                        all_lonely_props = False
-
-                if all_lonely_props:
-                    merge_props = {}
-                    general_props = {}
 
             return merge_props, general_props
 

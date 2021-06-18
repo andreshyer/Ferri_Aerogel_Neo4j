@@ -52,74 +52,74 @@ Rel|final_gel->lit_info|from
 Node|author_0|Author
     --name: Authors (0) *
     -email: Author Emails (0)
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_0|written_by
 
 Node|author_1|Author
     --name: Authors (1) *
     -email: Author Emails (1)
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_1|written_by
 
 Node|author_2|Author
     --name: Authors (2) *
     -email: Author Emails (2)
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_2|written_by
 
 Node|author_3|Author
     --name: Authors (3) *
     -email: Author Emails (3)
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_3|written_by
 
 Node|author_4|Author
     --name: Authors (4) *
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_4|written_by
 
 Node|author_5|Author
     --name: Authors (5) *
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_5|written_by
 
 Node|author_6|Author
     --name: Authors (6) *
     -email: Author Emails (6)
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_6|written_by
 
 Node|author_7|Author
     --name: Authors (7) *
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_7|written_by
 
 Node|author_8|Author
     --name: Authors (8) *
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_8|written_by
 
 Node|author_9|Author
     --name: Authors (9) *
-    -corresponding: {False} !
+    -corresponding: {False}
 Rel|lit_info->author_9|written_by
 
 Node|corresponding_author_0|Author
     --name: Corresponding Author (0) *
     -email: Corresponding Author Emails (0)
-    -corresponding: {True} !
+    -corresponding: {True}
 Rel|lit_info->corresponding_author_0|written_by
 
 Node|corresponding_author_1|Author
     --name: Corresponding Author (1) *
     -email: Corresponding Author Emails (1)
-    -corresponding: {True} !
+    -corresponding: {True}
 Rel|lit_info->corresponding_author_1|written_by
 
 Node|corresponding_author_2|Author
     --name: Corresponding Author (2) *
     -email: Corresponding Author Emails (2)
-    -corresponding: {True} !
+    -corresponding: {True}
 Rel|lit_info->corresponding_author_2|written_by
 
 
@@ -292,7 +292,7 @@ Rel|drying_steps->drying_method_5|uses_drying_method
 ### Sintering ###
 
 Node|sintering|Sintering
-    --final_material: Final Material *!
+    --final_material: Final Material *
     -temp: Sintering Temp (C)
     -time: Sintering Time (min)
     -ramp_rate: Ramp Rate (C/min)
@@ -304,18 +304,22 @@ Rel|final_gel->sintering|sintered_by
 
 Node|washing_steps|WashingSteps  # Core Node
     --final_material: Final Material *
-    -wash_times: Wash Times 1
-    -duration: Wash Duration 1 (days)
-    -temp:  Wash Temp 1 (C)
+    -wash_times_step_1: Wash Times 1
+    -duration_step_1: Wash Duration 1 (days)
+    -temp_step_1:  Wash Temp 1 (C)
+    -wash_times_step_2: Wash Times 2
+    -duration_step_2: Wash Duration 2 (days)
+    -temp_step_2:  Wash Temp 2 (C)
+    -wash_times_step_3: Wash Times 3
+    -duration_step_3: Wash Duration 3 (days)
+    -temp_step_3:  Wash Temp 3 (C)
+    -wash_times_step_4: Wash Times 4
+    -duration_step_4: Wash Duration 4 (days)
+    -temp_step_4:  Wash Temp 4 (C)
+    -wash_times_step_5: Wash Times 5
+    -duration_step_5: Wash Duration 5 (days)
+    -temp_step_5:  Wash Temp 5 (C)
 Rel|final_gel->washing_steps|uses_washing_steps
-
-Node|washing_conditions_1|WashingConditions
-    --final_material: Final Material *!
-    -wash_times: Wash Times 1
-    -duration: Wash Duration 1 (days)
-    -temp:  Wash Temp 1 (C)
-Rel|washing_steps->washing_conditions_1|uses_washing_conditions
-    -step: {1}
 
 Node|washing_solvent_1_0|Solvent
     --name: Wash Solvent 1 (0) *
@@ -342,14 +346,6 @@ Node|washing_solvent_1_4|Solvent
 Rel|washing_steps->washing_solvent_1_4|uses_washing_solvent
     -step: {1}
 
-Node|washing_conditions_2|WashingConditions
-    --final_material: Final Material *!
-    -wash_times: Wash Times 2
-    -duration: Wash Duration 2 (days)
-    -temp:  Wash Temp 2 (C)
-Rel|washing_steps->washing_conditions_2|uses_washing_conditions
-    -step: {2}
-
 Node|washing_solvent_2_0|Solvent
     --name: Wash Solvent 2 (0) *
 Rel|washing_steps->washing_solvent_2_0|uses_washing_solvent
@@ -364,14 +360,6 @@ Node|washing_solvent_2_2|Solvent
     --name: Wash Solvent 2 (2) *
 Rel|washing_steps->washing_solvent_2_2|uses_washing_solvent
     -step: {2}
-
-Node|washing_conditions_3|WashingConditions
-    --final_material: Final Material *!
-    -wash_times: Wash Times 3
-    -duration: Wash Duration 3 (days)
-    -temp:  Wash Temp 3 (C)
-Rel|washing_steps->washing_conditions_3|uses_washing_conditions
-    -step: {3}
 
 Node|washing_solvent_3_0|Solvent
     --name: Wash Solvent 3 (0) *
@@ -393,14 +381,6 @@ Node|washing_solvent_3_3|Solvent
 Rel|washing_steps->washing_solvent_3_3|uses_washing_solvent
     -step: {3}
 
-Node|washing_conditions_4|WashingConditions
-    --final_material: Final Material *!
-    -wash_times: Wash Times 4
-    -duration: Wash Duration 4 (days)
-    -temp:  Wash Temp 4 (C)
-Rel|washing_steps->washing_conditions_4|uses_washing_conditions
-    -step: {4}
-
 Node|washing_solvent_4_0|Solvent
     --name: Wash Solvent 4 (0) *
 Rel|washing_steps->washing_solvent_4_0|uses_washing_solvent
@@ -410,14 +390,6 @@ Node|washing_solvent_4_1|Solvent
     --name: Wash Solvent 4 (1) *
 Rel|washing_steps->washing_solvent_4_1|uses_washing_solvent
     -step: {4}
-
-Node|washing_conditions_5|WashingConditions
-    --final_material: Final Material *!
-    -wash_times: Wash Times 5
-    -duration: Wash Duration 5 (days)
-    -temp:  Wash Temp 5 (C)
-Rel|washing_steps->washing_conditions_5|uses_washing_conditions
-    -step: {5}
 
 Node|washing_solvent_5_0|Solvent
     --name: Wash Solvent 5 (0) *
@@ -441,12 +413,12 @@ Rel|final_gel->aging_step_1|uses_aging_steps
 
 Node|aging_solvent_1_0|Solvent
     --name: Aging Conditions (0) *
-    -step: {1} !
+    -step: {1}
 Rel|aging_step_1->aging_solvent_1_0|uses_aging_solvent
 
 Node|aging_solvent_1_1|Solvent
     --name: Aging Conditions (1) *
-    -step: {1} !
+    -step: {1}
 Rel|aging_step_1->aging_solvent_1_1|uses_aging_solvent
 
 Node|aging_step_2|AgingStep  # Core Node
@@ -458,17 +430,17 @@ Rel|final_gel->aging_step_2|uses_aging_steps
 
 Node|aging_solvent_2_0|Solvent
     --name: Aging Conditions 2 (0) *
-    -step: {2} !
+    -step: {2}
 Rel|aging_step_2->aging_solvent_2_0|uses_aging_solvent
 
 Node|aging_solvent_2_1|Solvent
     --name: Aging Conditions 2 (1) *
-    -step: {2} !
+    -step: {2}
 Rel|aging_step_2->aging_solvent_2_1|uses_aging_solvent
 
 Node|aging_solvent_2_2|Solvent
     --name: Aging Conditions 2 (2) *
-    -step: {2} !
+    -step: {2}
 Rel|aging_step_2->aging_solvent_2_2|uses_aging_solvent
 
 
