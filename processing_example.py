@@ -5,6 +5,7 @@ from pathlib import Path
 from pandas import DataFrame, read_csv, concat
 import numpy as np
 from machine_learning import Featurizer, ComplexDataProcessor, DataSplitter, Scaler, HyperTune, Grid, Regressor, train, graph, name
+from numpy.random import randint
 
 """
 TODO: redo examples 
@@ -64,19 +65,29 @@ def zip_run_name_files(run_name):
     # Delete the non-zipped directory
     rmtree(working_dir)
 
-def example_no_tune(algorithm, dataset, featurized=False, tuned=False):
+
+def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=False):
     """
     Example set up for running a non tuned model
 
     """
-    #dataset = r"si_aerogel_AI_machine_readable_v2.csv"
+    if random_seed is not None:
+        random_seed = randint(low=1, high=100)
     folder = "si_aerogels"
-    file_path = "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv/"
+    run_name = name.name(algorithm, dataset, folder, featurized, tuned)
+    
+    #print("Created {0}".format(run_name))
+    print("Algorithm: ", algorithm)
+    print("Dataset: ", dataset)
+    print("Featurize: ", str(featurized))
+    print("Tuned: ", str(tuned))
+
+    #dataset = r"si_aerogel_AI_machine_readable_v2.csv"
+    file_path = "files/" + folder + "/" + dataset
 
     data_path = str(Path(__file__).parent / file_path)
     data = read_csv(data_path)
     #algorithm = 'xgb'
-    run_name = name.name(algorithm, dataset, folder, featurized, tuned)
 
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
@@ -91,96 +102,46 @@ def example_no_tune(algorithm, dataset, featurized=False, tuned=False):
     data = data.drop([paper_id_column], axis=1)
 
     # Featurize molecules
-    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-    # data = featurizer.remove_xerogels()
-    # data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
-    # data = featurizer.replace_compounds_with_smiles()
-    # data = featurizer.featurize_molecules(method='rdkit2d')
-    # data = featurizer.replace_nan_with_zeros()
-
-    # Do not featurize molecules, drop all columns with words
-    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-    # data = featurizer.remove_xerogels()
-    # data = featurizer.drop_all_word_columns()
-    # data = featurizer.replace_nan_with_zeros()
-
-    # Do not featurize molecules, replace all words with numebrs
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
-    data = featurizer.replace_words_with_numbers(ignore_smiles=False)
+    data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
+    if featurized:
+        data = featurizer.replace_compounds_with_smiles()
+        data = featurizer.featurize_molecules(method='rdkit2d')
+    # data = featurizer.replace_nan_with_zeros()
+    else:
+        data = featurizer.drop_all_word_columns()
+        #data = featurizer.replace_words_with_numbers(ignore_smiles=False)
     data = featurizer.replace_nan_with_zeros()
 
     splitter = DataSplitter(df=data, y_columns=y_columns,
-                            train_percent=0.8, test_percent=0.2, val_percent=0, grouping_column=None,state=None)
+                            train_percent=0.8, test_percent=0.2, val_percent=0, grouping_column=None,state=random_seed, run_name=run_name)
     test_features, train_features, test_target, train_target, feature_list = splitter.split_data()  # Splitting data
     test_features, train_features = Scaler().scale_data("std",train_features, test_features)   # Scaling features
-    estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
+    if not tuned:
+        estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
+    else:
+        
+        grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
     
-    predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features, train_target, test_features, test_target)  # Get predictions after training n times 
+        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=3, cv_folds=3)  # Get parameters for hyper tuning
+        estimator, param, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
+    predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features, train_target, test_features, test_target, n=4, run_name=run_name)  # Get predictions after training n times 
 
     #feature_list = list(data.columns)  # Feature list
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
+    graph.pva_graph(scaled_predictions_stats, scaled_predictions, run_name, scaled=True)  # Get pva graph
+
     #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
     graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
 
     zip_run_name_files(run_name)
 
 
-def example_tuned():
-    """
-    Example set up for running a tuned model
-    TODO: Fix Hyper tune
-    """
-    dataset = r"si_aerogel_AI_machine_readable_v2.csv"
-    folder = "si_aerogels"
-    file_path = "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv/"
-    
-    data_path = str(Path(__file__).parent / file_path)
-    data = read_csv(data_path)
-    
-    algorithm = 'xgb'
-    run_name = name.name(algorithm, dataset, folder, True, False)  # Get target column
-    
-    y_columns = ['Surface Area (m2/g)']
-    drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-            'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
-    paper_id_column = 'paper_id'  # Group by papar option
-
-
-    #drop_columns.pop(len(drop_columns) - 1)
-    #paper_id_column = None
-
-    data = cluster_data(data)
-    data = data.drop([paper_id_column], axis=1)
-
-    featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-    data = featurizer.remove_xerogels()
-    data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
-    data = featurizer.replace_compounds_with_smiles()
-    data= featurizer.featurize_molecules(method='rdkit2d')
-    data = featurizer.replace_nan_with_zeros()
-
-    splitter = DataSplitter(df=data, y_columns=y_columns,
-                            train_percent=0.8, test_percent=0.2, val_percent=0, grouping_column=None,state=None)
-    test_features, train_features, test_target, train_target, feature_list = splitter.split_data()  # Splitting into train and test
-
-    test_features, train_features = Scaler().scale_data("std",train_features, test_features)  # Scaling train and test test features
-    grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
-    
-    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=3, cv_folds=3)  # Get parameters for hyper tuning
-    estimator, param, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
-    
-    predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features, train_target, test_features, test_target)  # Get prediction results from training the model n times
-
-    graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
-
-    #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name)  # Get feature importance graph based on algorithm
-    graph.shap_impgraphs(algorithm,estimator, test_features, feature_list, run_name)
-
 
 if __name__ == "__main__":
-    example_no_tune(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv")
+    example_run(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
+                featurized=False, tuned=False)
     #example_tuned()
 
     # example_tuned()
