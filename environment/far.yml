@@ -6,6 +6,7 @@ channels:
   - anaconda
 dependencies:
   - python=3.9.0
+  - shap
   - pandas
   - py2neo
   - tqdm
@@ -23,7 +24,7 @@ dependencies:
       - neo4j==4.2.1
       - git+https://github.com/bp-kelley/descriptastorus@2.4.0
       - pandas-flavor==0.2.0
-      - git+https://github.com/dmlc/xgboost.git
-      - git+https://github.com/keras-team/keras.git
-      - git+https://github.com/slundberg/shap.git
+      #- git+https://github.com/dmlc/xgboost.git
+      #- git+https://github.com/keras-team/keras.git
+      #- git+https://github.com/slundberg/shap.git
 

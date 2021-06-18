@@ -60,13 +60,24 @@ def example_no_tune():
     data = cluster_data(data)
     data = data.drop([paper_id_column], axis=1)
 
+    # Featurize molecules
+    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
+    # data = featurizer.remove_xerogels()
+    # data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
+    # data = featurizer.replace_compounds_with_smiles()
+    # data = featurizer.featurize_molecules(method='rdkit2d')
+    # data = featurizer.replace_nan_with_zeros()
 
+    # Do not featurize molecules, drop all columns with words
+    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
+    # data = featurizer.remove_xerogels()
+    # data = featurizer.drop_all_word_columns()
+    # data = featurizer.replace_nan_with_zeros()
+
+    # Do not featurize molecules, replace all words with numebrs
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
-    data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
-    data = featurizer.replace_compounds_with_smiles()
-    data = featurizer.featurize_molecules(method='rdkit2d')
-
+    data = featurizer.replace_words_with_numbers(ignore_smiles=False)
     data = featurizer.replace_nan_with_zeros()
 
     splitter = DataSplitter(df=data, y_columns=y_columns,
@@ -142,5 +153,5 @@ def example_tuned():
 
 
 if __name__ == "__main__":
-    #example_no_tune()
-    example_tuned()
+    example_no_tune()
+    # example_tuned()
