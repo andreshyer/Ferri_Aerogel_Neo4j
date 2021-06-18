@@ -154,8 +154,6 @@ class DataSplitter:
         feature_list = list(train_features.columns)
         if isinstance(val_features, DataFrame):  # If val sets are not
             val_features, val_target = self.__reshape_df__(val_features), self.__reshape_df__(val_target)
-
-        test_features, train_features, val_features = np.array(test_features), np.array(train_features), np.array(val_features)
         
         if self.val_percent == 0.0:
             return test_features, train_features, test_target, train_target, feature_list
