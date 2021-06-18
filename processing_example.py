@@ -37,7 +37,7 @@ def example_no_tune():
     # drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
     #                 'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
     #                 'Average Pore Size (nm)']
-    algorithm = 'rf'
+    algorithm = 'xgb'
     run_name = name.name(algorithm, dataset, folder, True, False)
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
@@ -75,13 +75,14 @@ def example_no_tune():
     
     #feature_list = list(data.columns)  # Feature list
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
-    graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name)  # Get feature imporance based on algorithm
+    #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
+    graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
 
 
 def example_tuned():
     """
     Example set up for running a tuned model
-
+    TODO: Fix Hyper tune
     """
     dataset = r"si_aerogel_AI_machine_readable_v2.csv"
     folder = "si_aerogels"
@@ -124,17 +125,18 @@ def example_tuned():
     test_features, train_features = Scaler().scale_data("std",train_features, test_features)  # Scaling train and test test features
     grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
     
-    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=3, cv_folds=3)  # Get parameters for hyper tuning
+    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50, cv_folds=3)  # Get parameters for hyper tuning
     estimator, param, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     
     predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features, train_target, test_features, test_target)  # Get prediction results from training the model n times
     
     #feature_list = list(data.columns)  # Get feature list
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
-    graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name)  # Get feature importance graph based on algorithm
 
+    #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name)  # Get feature importance graph based on algorithm
+    graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
 
 
 if __name__ == "__main__":
-    example_no_tune()
-    #example_tuned()
+    #example_no_tune()
+    example_tuned()
