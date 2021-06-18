@@ -3,6 +3,7 @@ from typing import Union
 from pandas import DataFrame
 from numpy import ndarray
 from sklearn.model_selection import train_test_split
+import numpy as np
 
 
 class DataSplitter:
@@ -65,16 +66,16 @@ class DataSplitter:
         len_val = len_total * val_percent
 
         p1 = (len_train + len_val) / (len_train + len_test + len_val)  # Some /fancy/ math done here :)
-        x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=p1, random_state=self.state)
+        train_features, test_features, train_target, test_target = train_test_split(x, y, train_size=p1, random_state=self.state)
 
         if len_val > 0:
             p2 = len_train / (len_train + len_val)  # Here as well :P
-            x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, train_size=p2,
+            train_features, val_features, train_target, val_target = train_test_split(train_features, train_target, train_size=p2,
                                                               random_state=self.state)
         else:
-            x_val, y_val = None, None
+            val_features, val_target = None, None
 
-        return x_test, x_train, x_val, y_test, y_train, y_val
+        return test_features, train_features, val_features, test_target, train_target, val_target
 
     def __split_by_row__(self):
         """
@@ -86,11 +87,11 @@ class DataSplitter:
         y = self.df[self.y_columns]
         x = self.df.drop(self.y_columns, axis=1)
         len_total = len(self.df)
-        x_test, x_train, x_val, y_test, y_train, y_val = self.__do_split__(x, y,
+        test_features, train_features, val_features, test_target, train_target, val_target = self.__do_split__(x, y,
                                                                            self.train_percent,
                                                                            self.test_percent,
                                                                            self.val_percent)
-        return x_test, x_train, x_val, y_test, y_train, y_val
+        return test_features, train_features, val_features, test_target, train_target, val_target
 
     def __split_by_group__(self):
         """
@@ -121,17 +122,17 @@ class DataSplitter:
         training = self.df.loc[self.df[self.grouping_column].isin(train_ids)]
 
         # spilt up testing and training set into x and y
-        x_test, y_test = testing.drop(x_columns_to_drop, axis=1), testing[self.y_columns]
-        x_train, y_train = training.drop(x_columns_to_drop, axis=1), training[self.y_columns]
+        test_features, test_target = testing.drop(x_columns_to_drop, axis=1), testing[self.y_columns]
+        train_features, train_target = training.drop(x_columns_to_drop, axis=1), training[self.y_columns]
 
         # Do the same for val set if the val percent is more than 0
         if isinstance(val_ids, ndarray):  # If val_ids is not None
             val_ids = list(val_ids)
             val = self.df.loc[self.df[self.grouping_column].isin(val_ids)]
-            x_val, y_val = val.drop(x_columns_to_drop, axis=1), val[self.y_columns]
+            val_features, val_target = val.drop(x_columns_to_drop, axis=1), val[self.y_columns]
         else:
-            x_val, y_val = None, None
-        return x_test, x_train, x_val, y_test, y_train, y_val
+            val_features, val_target = None, None
+        return test_features, train_features, val_features, test_target, train_target, val_target
 
     def split_data(self):
         """
@@ -143,13 +144,18 @@ class DataSplitter:
         """
 
         if self.grouping_column:
-            x_test, x_train, x_val, y_test, y_train, y_val = self.__split_by_group__()
+            test_features, train_features, val_features, test_target, train_target, val_target = self.__split_by_group__()
         else:
-            x_test, x_train, x_val, y_test, y_train, y_val = self.__split_by_row__()
+            test_features, train_features, val_features, test_target, train_target, val_target = self.__split_by_row__()
 
         # Verify the arrays are the correct shape
-        x_test, y_test = self.__reshape_df__(x_test), self.__reshape_df__(y_test)
-        x_train, y_train = self.__reshape_df__(x_train), self.__reshape_df__(y_train)
-        if isinstance(x_val, DataFrame):  # If val sets are not
-            x_val, y_val = self.__reshape_df__(x_val), self.__reshape_df__(y_val)
-        return x_test, x_train, x_val, y_test, y_train, y_val
+        test_features, test_target = self.__reshape_df__(test_features), self.__reshape_df__(test_target)
+        train_features, train_target = self.__reshape_df__(train_features), self.__reshape_df__(train_target)
+        feature_list = list(train_features.columns)
+        if isinstance(val_features, DataFrame):  # If val sets are not
+            val_features, val_target = self.__reshape_df__(val_features), self.__reshape_df__(val_target)
+        
+        if self.val_percent == 0.0:
+            return test_features, train_features, test_target, train_target, feature_list
+        else:
+            return test_features, train_features, val_features, test_target, train_target, val_target, feature_list
