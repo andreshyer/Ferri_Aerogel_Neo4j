@@ -1,3 +1,6 @@
+from os import listdir, path, mkdir
+from re import match
+from shutil import move, make_archive, rmtree
 from pathlib import Path
 from pandas import DataFrame, read_csv, concat
 import numpy as np
@@ -37,6 +40,29 @@ def cluster_data(data):
     data.reset_index(drop=True, inplace=True)
     return data
 
+def zip_run_name_files(run_name):
+
+    # Make sure a output directory exist
+    if not path.exists('output'):
+        mkdir('output')
+
+    # The directory to put files into
+    working_dir = Path(f'output/{run_name}')
+    mkdir(working_dir)
+
+    # The directory where files are now
+    current_dir = Path(__file__).parent.absolute()
+
+    # Move all files from current dir to working dir
+    for f in listdir():
+        if match(run_name, f):
+            move(current_dir / f, working_dir / f)
+
+    # Zip the new directory
+    make_archive(working_dir, 'zip', working_dir)
+
+    # Delete the non-zipped directory
+    rmtree(working_dir)
 
 def example_no_tune(algorithm, dataset, featurized=False, tuned=False):
     """
@@ -64,13 +90,24 @@ def example_no_tune(algorithm, dataset, featurized=False, tuned=False):
     data = cluster_data(data)
     data = data.drop([paper_id_column], axis=1)
 
+    # Featurize molecules
+    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
+    # data = featurizer.remove_xerogels()
+    # data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
+    # data = featurizer.replace_compounds_with_smiles()
+    # data = featurizer.featurize_molecules(method='rdkit2d')
+    # data = featurizer.replace_nan_with_zeros()
 
+    # Do not featurize molecules, drop all columns with words
+    # featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
+    # data = featurizer.remove_xerogels()
+    # data = featurizer.drop_all_word_columns()
+    # data = featurizer.replace_nan_with_zeros()
+
+    # Do not featurize molecules, replace all words with numebrs
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
-    data = featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way than dropping cols
-    data = featurizer.replace_compounds_with_smiles()
-    data = featurizer.featurize_molecules(method='rdkit2d')
-
+    data = featurizer.replace_words_with_numbers(ignore_smiles=False)
     data = featurizer.replace_nan_with_zeros()
 
     splitter = DataSplitter(df=data, y_columns=y_columns,
@@ -85,6 +122,8 @@ def example_no_tune(algorithm, dataset, featurized=False, tuned=False):
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
     #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
     graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
+
+    zip_run_name_files(run_name)
 
 
 def example_tuned():
@@ -143,3 +182,6 @@ def example_tuned():
 if __name__ == "__main__":
     example_no_tune(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv")
     #example_tuned()
+
+    # example_tuned()
+

@@ -122,7 +122,7 @@ class Ingester:
         keywords = [0]  # Force 0 to be the entry, as this will exist if replace_nan_with_zeros was run
         for column in self.df:
             if self.df[column].dtype == "object":  # If the column has any strings
-                if not ignore_smiles:
+                if ignore_smiles:
                     if not self.__test_col_if_obj_smiles__(self.df[column]):  # If the column is not a SMILES column
                         keywords.extend(self.df[column].unique())  # Get all the unique values in the column
                 else:
@@ -141,6 +141,14 @@ class Ingester:
                     if not suppress_warnings:
                         warn(f"Dropping column {column}")
                     bad_columns.append(column)
+        self.df = self.df.drop(bad_columns, axis=1)
+        return self.df
+
+    def drop_all_word_columns(self, suppress_warning=False):
+        bad_columns = []
+        for column in self.df:
+            if self.df[column].dtype == "object":  # IF the column has any strings
+                bad_columns.append(column)
         self.df = self.df.drop(bad_columns, axis=1)
         return self.df
 
