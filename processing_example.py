@@ -3,6 +3,10 @@ from pandas import DataFrame, read_csv, concat
 import numpy as np
 from machine_learning import Featurizer, ComplexDataProcessor, DataSplitter, Scaler, HyperTune, Grid, Regressor, train, graph, name
 
+"""
+TODO: redo examples 
+"""
+
 
 def cluster_data(data):
 
@@ -34,19 +38,19 @@ def cluster_data(data):
     return data
 
 
-def example_no_tune():
+def example_no_tune(algorithm, dataset, featurized=False, tuned=False):
     """
     Example set up for running a non tuned model
 
     """
-    dataset = r"si_aerogel_AI_machine_readable_v2.csv"
+    #dataset = r"si_aerogel_AI_machine_readable_v2.csv"
     folder = "si_aerogels"
     file_path = "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv/"
 
     data_path = str(Path(__file__).parent / file_path)
     data = read_csv(data_path)
-    algorithm = 'xgb'
-    run_name = name.name(algorithm, dataset, folder, True, False)
+    #algorithm = 'xgb'
+    run_name = name.name(algorithm, dataset, folder, featurized, tuned)
 
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
@@ -72,12 +76,11 @@ def example_no_tune():
     splitter = DataSplitter(df=data, y_columns=y_columns,
                             train_percent=0.8, test_percent=0.2, val_percent=0, grouping_column=None,state=None)
     test_features, train_features, test_target, train_target, feature_list = splitter.split_data()  # Splitting data
-    #print(len(train_features))
     test_features, train_features = Scaler().scale_data("std",train_features, test_features)   # Scaling features
     estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
     
     predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features, train_target, test_features, test_target)  # Get predictions after training n times 
-    
+
     #feature_list = list(data.columns)  # Feature list
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
     #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
@@ -96,25 +99,21 @@ def example_tuned():
     data_path = str(Path(__file__).parent / file_path)
     data = read_csv(data_path)
     
-    algorithm = 'rf'
+    algorithm = 'xgb'
     run_name = name.name(algorithm, dataset, folder, True, False)  # Get target column
     
-    y_columns = ['Surface Area (m2/g)', 'Thermal Conductivity (W/mK)']
+    y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
             'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
                     'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
     paper_id_column = 'paper_id'  # Group by papar option
-    splitter = DataSplitter(df=data, y_columns=y_columns,
-                            train_percent=0.8, test_percent=0.2, val_percent=0,
-                            grouping_column=paper_id_column)
-    x_test_m, x_train_m, x_val_m, y_test_m, y_train_m, y_val_m = splitter.split_data()
 
 
-    drop_columns.pop(len(drop_columns) - 1)
-    paper_id_column = None
+    #drop_columns.pop(len(drop_columns) - 1)
+    #paper_id_column = None
 
     data = cluster_data(data)
-#    data = data.drop([paper_id_column], axis=1)
+    data = data.drop([paper_id_column], axis=1)
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
     data = featurizer.remove_xerogels()
@@ -130,7 +129,7 @@ def example_tuned():
     test_features, train_features = Scaler().scale_data("std",train_features, test_features)  # Scaling train and test test features
     grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
     
-    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50, cv_folds=3)  # Get parameters for hyper tuning
+    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=3, cv_folds=3)  # Get parameters for hyper tuning
     estimator, param, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     
     predictions, predictions_stats, scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features, train_target, test_features, test_target)  # Get prediction results from training the model n times
@@ -138,9 +137,9 @@ def example_tuned():
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
 
     #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name)  # Get feature importance graph based on algorithm
-    graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
+    graph.shap_impgraphs(algorithm,estimator, test_features, feature_list, run_name)
 
 
 if __name__ == "__main__":
-    #example_no_tune()
-    example_tuned()
+    example_no_tune(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv")
+    #example_tuned()
