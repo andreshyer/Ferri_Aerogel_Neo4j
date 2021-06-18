@@ -6,9 +6,15 @@ import pandas as pd
 
 def train_reg(algorithm, estimator, train_features, train_target, test_features, test_target, fit_params=None, n=5):
     """
-    Function to train the model n times and collect basic statistics about results.
-    :param self:
-    :param n: number of replicates
+
+    :param algorithm:
+    :param estimator:
+    :param train_features:
+    :param train_target:
+    :param test_features:
+    :param test_target:
+    :param fit_params:
+    :param n:
     :return:
     """
 
