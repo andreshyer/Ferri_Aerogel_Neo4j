@@ -1,3 +1,6 @@
+from os import listdir, path, mkdir
+from re import match
+from shutil import move, make_archive, rmtree
 from pathlib import Path
 from pandas import DataFrame, read_csv, concat
 import numpy as np
@@ -33,6 +36,29 @@ def cluster_data(data):
     data.reset_index(drop=True, inplace=True)
     return data
 
+def zip_run_name_files(run_name):
+
+    # Make sure a output directory exist
+    if not path.exists('output'):
+        mkdir('output')
+
+    # The directory to put files into
+    working_dir = Path(f'output/{run_name}')
+    mkdir(working_dir)
+
+    # The directory where files are now
+    current_dir = Path(__file__).parent.absolute()
+
+    # Move all files from current dir to working dir
+    for f in listdir():
+        if match(run_name, f):
+            move(current_dir / f, working_dir / f)
+
+    # Zip the new directory
+    make_archive(working_dir, 'zip', working_dir)
+
+    # Delete the non-zipped directory
+    rmtree(working_dir)
 
 def example_no_tune():
     """
@@ -93,6 +119,8 @@ def example_no_tune():
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
     #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
     graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
+
+    zip_run_name_files(run_name)
 
 
 def example_tuned():
