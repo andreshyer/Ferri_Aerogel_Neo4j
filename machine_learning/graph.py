@@ -7,7 +7,7 @@ import shap
 import matplotlib
 
 
-def pva_graph(predictions_stats, predictions,run_name):
+def pva_graph(predictions_stats, predictions,run_name, scaled=False):
     """
     Make Predicted vs. Actual graph with prediction uncertainty.
     Pass dataframe from multipredict function. Return a graph.
@@ -17,11 +17,15 @@ def pva_graph(predictions_stats, predictions,run_name):
 #         pva = scaled_predictions
 #     else:g
     pva = predictions
-
-    r2 = predictions_stats['r2_avg']
-    mse = predictions_stats['mse_avg']
-    rmse = predictions_stats['rmse_avg']
-
+    
+    if not scaled:
+        r2 = predictions_stats['r2_avg']
+        mse = predictions_stats['mse_avg']
+        rmse = predictions_stats['rmse_avg']
+    else:
+        r2 = predictions_stats['r2_avg_scaled']
+        mse = predictions_stats['mse_avg_scaled']
+        rmse = predictions_stats['rmse_avg_scaled']
     plt.rcParams['figure.figsize'] = [12, 9]
     plt.style.use('bmh')
     fig, ax = plt.subplots()
@@ -47,8 +51,8 @@ def pva_graph(predictions_stats, predictions,run_name):
 
     plt.plot(lims, lims, 'k-', label='y=x')
     plt.plot([], [], ' ', label='R^2 = %.3f' % r2)
-    plt.plot([], [], ' ', label='RMSE = %.3f' % rmse)
     plt.plot([], [], ' ', label='MSE = %.3f' % mse)
+    plt.plot([], [], ' ', label='RMSE = %.3f' % rmse)
     ax.set_aspect('equal')
     ax.set_xlim(lims)
     ax.set_ylim(lims)
@@ -57,9 +61,10 @@ def pva_graph(predictions_stats, predictions,run_name):
 
     fig.patch.set_facecolor('blue')  # Will change background color
     fig.patch.set_alpha(0.0)  # Makes background transparent
-
-    plt.savefig(run_name + '_' + f'PVA.png')
-
+    if scaled:
+        plt.savefig(run_name + '_' + f'_scaled_PVA.png')
+    else:
+        plt.savefig(run_name + '_' + f'PVA.png')
 
 def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
     """
