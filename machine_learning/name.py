@@ -54,7 +54,6 @@ def dataset_str(folder):
         unique_list.append(unique)  # Get all dictionary for a situation that has multiple matching first character
     for dictionary in unique_list:  # Loop through all dictionaries
         data_dict.update(dictionary)  # Update the original dictionary
-    print(data_dict)
     return data_dict
 
 
@@ -64,7 +63,7 @@ def algorithm_str():
     This representation follows the "Letters and Numbers" rule explained in naming_schemes_v2.pptx in the naming branch
     :return:
     """
-    algorithm_list = ['ada', 'rf', 'gdb', 'mlp', 'knn', 'nn', 'svm', 'cnn']  # Out current supported algorithm
+    algorithm_list = ['ada', 'rf', 'gdb', 'mlp', 'knn', 'nn', 'svm', 'cnn', 'xgb']  # Out current supported algorithm
     represent = [algor[0].upper() for algor in algorithm_list]  # List of algorithm's first letter with upper case
     algor_dict = {}
     for algor, rep in zip(algorithm_list, represent):  # Looping through two lists at the same time
