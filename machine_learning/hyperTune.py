@@ -7,6 +7,9 @@ from skopt import callbacks
 
 
 class HyperTune:
+    """
+    TODO: Fix hypertune. Getting errors after tuning
+    """
     def __init__(self, algorithm, train_features, train_target, param_grid, opt_iter=10, n_jobs=3, 
                  cv_folds=3, scoring="neg_mean_squared_error", deltay=None,fit_params=None):
         
@@ -21,7 +24,7 @@ class HyperTune:
         self.scoring = scoring
         self.deltay = deltay
         self.fit_params = fit_params
-        self.cp_delta = float((0.05 - self.train_target.min())/(self.train_target.max() - self.train_target.min()))  # Min max scaling
+        self.cp_delta = float((0.05 - min(self.train_target.min()))/(max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
         self.n_best = 5
     
     def hyper_tune(self, method="random"):
@@ -31,7 +34,7 @@ class HyperTune:
         if method == "random":
             tune_algorithm = RandomizedSearchCV(estimator=self.estimator, param_distributions=self.param_grid,
                                                 n_iter=self.opt_iter, scoring=self.scoring, random_state=42,
-                                                n_jobs=self.n_jobs, cv=self.cv_folds)
+                                                n_jobs=self.n_jobs, cv=self.cv_folds, verbose=3)
             tune_algorithm.fit(self.train_features, self.train_target)
         elif method == "bayes":
             tune_algorithm = BayesSearchCV(estimator=self.estimator,  # what regressor to use
