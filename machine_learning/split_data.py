@@ -10,7 +10,7 @@ class DataSplitter:
 
     def __init__(self, df: DataFrame, y_columns: Union[list[str], str],
                  train_percent: float, test_percent: float, val_percent: float = 0,
-                 grouping_column: str = None, state: int = None):
+                 grouping_column: str = None, state: int = None, run_name: str = None):
         """
         The goal of this class is to take all the Data and split it up into a test, train, and val set
 
@@ -33,6 +33,7 @@ class DataSplitter:
         if not isinstance(y_columns, list):
             y_columns = [y_columns]
         self.y_columns: list[str] = y_columns
+        self.run_name : str = run_name
 
     @staticmethod
     def __reshape_df__(df: DataFrame):  # Test if dataframe only has one column, if so return a series with info
@@ -151,10 +152,16 @@ class DataSplitter:
         # Verify the arrays are the correct shape
         test_features, test_target = self.__reshape_df__(test_features), self.__reshape_df__(test_target)
         train_features, train_target = self.__reshape_df__(train_features), self.__reshape_df__(train_target)
+        
+        if self.run_name is not None:
+            train_features.to_csv(self.run_name + "_train_set.csv")
+            test_features.to_csv(self.run_name + "_test_set.csv")
+
         feature_list = list(train_features.columns)
         if isinstance(val_features, DataFrame):  # If val sets are not
             val_features, val_target = self.__reshape_df__(val_features), self.__reshape_df__(val_target)
-       
+            if self.run_name is not None:
+                val_features.to_csv(self.run_name + "_val_set.csv")
         test_features, train_features, val_features = np.array(test_features), np.array(train_features), np.array(val_features)
         if self.val_percent == 0.0:
             return test_features, train_features, test_target, train_target, feature_list
