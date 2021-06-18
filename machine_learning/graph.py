@@ -117,35 +117,35 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
             # self.impgraph = plt
 
 
-def shap_impgraphs(algorithm, estimator, train_features, feature_list, run_name):
+def shap_impgraphs(algorithm, estimator, features, feature_list, run_name, predict=False):
     """
-    TODO: FIx force plot. Add docstring
+    TODO: Add docstring. Try  force plot in Jupyter
     :param algorithm:
     :param estimator:
-    :param train_features:
+    :param features:
     :param feature_list:
     :param run_name:
     :return:
     """
+    features = pd.DataFrame(features, columns=feature_list)
     if algorithm in ["rf", "gdb", "xgb"]:
-        explainer = shap.TreeExplainer(estimator, feature_names=feature_list)
+        if predict:
+            explainer = shap.KernelExplainer(estimator, features)
+        else: 
+            explainer = shap.TreeExplainer(estimator)
 
-        shap_values = explainer.shap_values(train_features)
+        shap_values = explainer.shap_values(features)
         matplotlib.use('Agg')
         _ = plt.figure()
-        shap.summary_plot(shap_values, train_features,feature_names=feature_list, max_display=15)
+        shap.summary_plot(shap_values, features, max_display=15)
         plt.tight_layout()
         _.savefig(run_name+"_shap_summary_plot.png")
 
         g = plt.figure()
-        shap.summary_plot(shap_values, train_features,feature_names=feature_list, max_display=15, plot_type='bar')
+        shap.summary_plot(shap_values, features, max_display=15, plot_type='bar')
         plt.tight_layout()
         g.savefig(run_name+"_shap_bar_plot.png")
         
-        p = plt.figure()
-        shap.force_plot(explainer.expected_value, shap_values, train_features, feature_names=feature_list)
-        plt.tight_layout()
-        p.savefig(run_name+"_shap_force_plot.png")
         
         #_.tight_layout()
     #plt.close(g)
