@@ -3,6 +3,8 @@ from matplotlib import cm
 import numpy as np
 import pandas as pd
 from xgboost import plot_importance
+import shap
+import matplotlib
 
 
 def pva_graph(predictions_stats, predictions,run_name):
@@ -113,3 +115,39 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
             plt.savefig(run_name + '_importance-graph.png')
             # plt.close()
             # self.impgraph = plt
+
+
+def shap_impgraphs(algorithm, estimator, train_features, feature_list, run_name):
+    """
+    TODO: FIx force plot. Add docstring
+    :param algorithm:
+    :param estimator:
+    :param train_features:
+    :param feature_list:
+    :param run_name:
+    :return:
+    """
+    if algorithm in ["rf", "gdb", "xgb"]:
+        explainer = shap.TreeExplainer(estimator, feature_names=feature_list)
+
+        shap_values = explainer.shap_values(train_features)
+        matplotlib.use('Agg')
+        _ = plt.figure()
+        shap.summary_plot(shap_values, train_features,feature_names=feature_list, max_display=15)
+        plt.tight_layout()
+        _.savefig(run_name+"_shap_summary_plot.png")
+
+        g = plt.figure()
+        shap.summary_plot(shap_values, train_features,feature_names=feature_list, max_display=15, plot_type='bar')
+        plt.tight_layout()
+        g.savefig(run_name+"_shap_bar_plot.png")
+        
+        p = plt.figure()
+        shap.force_plot(explainer.expected_value, shap_values, train_features, feature_names=feature_list)
+        plt.tight_layout()
+        p.savefig(run_name+"_shap_force_plot.png")
+        
+        #_.tight_layout()
+    #plt.close(g)
+
+
