@@ -164,7 +164,6 @@ class Featurizer(Ingester):
     @staticmethod
     def __concat_squeezed_dfs__(squeezed_dfs):
         featurized_df = squeezed_dfs.pop(0)
-        featurized_df.to_csv('dev.csv')
         for squeezed_df in squeezed_dfs:
             featurized_df = concat((featurized_df, squeezed_df), axis=1)
         return featurized_df
