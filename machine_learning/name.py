@@ -113,5 +113,5 @@ def name(algorithm, dataset, folder, featurized=False, tuned=False):
     date_string = now.strftime("_%Y%m%d-%H%M%S")  # Get date and time string
     run_name = ''.join([algorithm_string, dataset_string, feat_string, tune_string, date_string])  # Run name
     date_str = now.strftime("%m/%d/%Y %H:%M:%S")
-    #print("Created {0} on {1}".format(run_name, date_str))
+    print("Created {0} on {1}".format(run_name, date_str))
     return run_name
