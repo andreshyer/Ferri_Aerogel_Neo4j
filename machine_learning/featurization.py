@@ -70,6 +70,11 @@ class Featurizer(Ingester):
         # Pull functions and class objects from Ingester
         super().__init__(df=df, y_columns=y_columns, columns_to_drop=columns_to_drop)
         self.columns_featurized: list[str] = []
+        self.raw_df: DataFrame = self.df.copy()
+
+    def reset_featurization(self):
+        self.df = self.raw_df.copy()
+        return self.df
 
     def __gather_same_column_types__(self):
         """
