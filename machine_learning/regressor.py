@@ -1,5 +1,6 @@
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.neural_network import MLPRegressor
 from xgboost import XGBRegressor
 
 
@@ -22,7 +23,8 @@ class Regressor:
         
         skl_regs ={'rf': RandomForestRegressor,
                    'gdb': GradientBoostingRegressor,
-                   'xgb': XGBRegressor
+                   'xgb': XGBRegressor,
+                   'nn': MLPRegressor
                    }                    
         if algorithm in skl_regs.keys():
             #print(algorithm)

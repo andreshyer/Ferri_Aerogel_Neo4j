@@ -31,7 +31,7 @@ def train_reg(algorithm, estimator, train_features, train_target,
 
     for i in range(n):
         
-        if algorithm == "nn":
+        if fit_params:
             estimator.fit(train_features, train_target, **fit_params)
 
         else:
