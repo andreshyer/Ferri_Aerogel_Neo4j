@@ -79,11 +79,11 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
         if algorithm == "xgb":
             estimator.get_booster().feature_names = feature_list
 
-            #plot_importance(estimator, max_num_features=20, importance_type='gain')
+            plot_importance(estimator, importance_type='gain')
             #plt.savefig(run_name + '_importance-graph.png')
 
             importance = estimator.get_booster().get_score(importance_type="weight")
-            print(importance)
+            
             tuples = [(k, importance[k]) for k in importance]
             tuples = sorted(tuples, key=lambda x: x[1])[-20:]
 
@@ -122,6 +122,59 @@ def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
             # self.impgraph = plt
 
 
+def abs_shap(df_shap,df, run_name):
+    #import matplotlib as plt
+    # Make a copy of the input data
+    shap_v = pd.DataFrame(df_shap)
+    feature_list = df.columns
+    shap_v.columns = feature_list
+    df_v = df.copy().reset_index().drop('index',axis=1)
+    
+    # Determine the correlation in order to plot with different colors
+    corr_list = list()
+    for i in feature_list:
+        b = np.corrcoef(shap_v[i],df_v[i])[1][0]
+        corr_list.append(b)
+    corr_df = pd.concat([pd.Series(feature_list),pd.Series(corr_list)],axis=1).fillna(0)
+    # Make a data frame. Column 1 is the feature, and Column 2 is the correlation coefficient
+    corr_df.columns  = ['Variable','Corr']
+    corr_df['Sign'] = np.where(corr_df['Corr']>0,'red','blue')
+    
+    # Plot it
+    shap_abs = np.abs(shap_v)
+    k=pd.DataFrame(shap_abs.mean()).reset_index()
+    k.columns = ['Variable','SHAP_abs']
+    k2 = k.merge(corr_df,left_on = 'Variable',right_on='Variable',how='inner')
+    k2 = k2.sort_values(by='SHAP_abs',ascending = True)
+    colorlist = k2['Sign']
+    ax = k2.plot.barh(x='Variable',y='SHAP_abs',color = colorlist,legend=False)
+    
+    plt.gcf().set_size_inches(8, len(feature_list) * 0.5 + 1.5)
+    plt.tight_layout()
+    ax.set_xlabel("mean(|SHAP Value|) (Red = Positive Impact)")
+    plt.savefig(run_name + "_summary_bar_plot.png")
+    plt.close()
+
+
+def force_plot(estimator, train_features, run_name, n):
+    explainerModel = shap.TreeExplainer(estimator)
+    shap_values_Model = explainerModel.shap_values(train_features)
+    plt.tight_layout()
+    shap.force_plot(explainerModel.expected_value, shap_values_Model[n], train_features.iloc[[n]],show=False,matplotlib=True).savefig(run_name + "_force_plot.png", format = "png",dpi = 150,bbox_inches = 'tight')
+
+    #return(p)
+    
+
+
+def water_fall(estimator, train_features, run_name,n):
+    explainerModel = shap.TreeExplainer(estimator)
+    shap_values_model = explainerModel.shap_values(train_features)
+    shap.plots._waterfall.waterfall_legacy(explainerModel.expected_value, shap_values_model[n])
+    plt.savefig(run_name + "_waterfall_plot.png")
+
+
+
+
 def shap_impgraphs(algorithm, estimator, features, feature_list, run_name, predict=False):
     """
     TODO: Add docstring. Try  force plot in Jupyter
@@ -150,8 +203,14 @@ def shap_impgraphs(algorithm, estimator, features, feature_list, run_name, predi
         shap.summary_plot(shap_values, features, max_display=15, plot_type='bar')
         plt.tight_layout()
         g.savefig(run_name+"_shap_bar_plot.png")
+        plt.close()
         
+        abs_shap(shap_values, features, run_name)                
         
+        force_plot(estimator, features, run_name, 0)
+        
+        #water_fall(estimator, features, run_name, 0)
+
         #_.tight_layout()
     #plt.close(g)
 
