@@ -10,7 +10,7 @@ from machine_learning import DataSplitter
 
 class ComplexDataProcessor:
 
-    def __init__(self, df: DataFrame, y_columns: Union[list[str], str], grouping_column: str = None,
+    def __init__(self, df: DataFrame, y_columns: list, grouping_column: str = None,
                  state: int = None):
         """
         This class is a bit more to explain. So a random forest has an option to show what it think the importance
@@ -32,7 +32,7 @@ class ComplexDataProcessor:
 
         if not isinstance(y_columns, list):
             y_columns = [y_columns]
-        self.y_columns: list[str] = y_columns
+        self.y_columns: list = y_columns
 
         self.feature_importances: None = None
 
