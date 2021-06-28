@@ -32,7 +32,7 @@ class HyperTune:
         if method == "random":
             tune_algorithm = RandomizedSearchCV(estimator=self.estimator, param_distributions=self.param_grid,
                                                 n_iter=self.opt_iter, scoring=self.scoring, random_state=42,
-                                                n_jobs=self.n_jobs, cv=self.cv_folds, verbose=3)
+                                                n_jobs=self.n_jobs, cv=self.cv_folds)
             tune_algorithm.fit(self.train_features, self.train_target)
         elif method == "bayes":
             tune_algorithm = BayesSearchCV(estimator=self.estimator,  # what regressor to use
