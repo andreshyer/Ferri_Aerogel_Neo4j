@@ -6,7 +6,7 @@ from pandas import DataFrame, read_csv, concat
 import numpy as np
 from machine_learning import Featurizer, ComplexDataProcessor, DataSplitter, Scaler, HyperTune, Grid, Regressor, train, graph, name
 from numpy.random import randint
-
+import os
 """
 TODO: redo examples 
 """
@@ -52,8 +52,8 @@ def zip_run_name_files(run_name):
     mkdir(working_dir)
 
     # The directory where files are now
-    current_dir = Path(__file__).parent.absolute()
-
+    #current_dir = Path(__file__).parent.absolute()
+    current_dir = Path.cwd()
     # Move all files from current dir to working dir
     for f in listdir():
         if match(run_name, f):
@@ -132,7 +132,7 @@ def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=Fa
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
     graph.pva_graph(scaled_predictions_stats, scaled_predictions, run_name, scaled=True)  # Get pva graph
 
-    #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
+    graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
     graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
 
     zip_run_name_files(run_name)
@@ -140,7 +140,7 @@ def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=Fa
 
 
 if __name__ == "__main__":
-    example_run(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
+    example_run(algorithm="xgb", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
                 featurized=False, tuned=False)
     #example_tuned()
 
