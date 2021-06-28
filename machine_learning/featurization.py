@@ -11,7 +11,7 @@ from machine_learning import Ingester
 
 class Featurizer(Ingester):
 
-    def __init__(self, df: DataFrame, y_columns: Union[list[str], str], columns_to_drop: Union[list[str], str] = None):
+    def __init__(self, df: DataFrame, y_columns: list, columns_to_drop: list = None):
         """
         The overall goal of this script is fundamentally different than a normal featurization pipeline.
         If we were to featurize each of the smiles separately, then that would result in thousands of columns,

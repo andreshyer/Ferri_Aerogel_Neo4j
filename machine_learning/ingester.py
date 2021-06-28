@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 
 class Ingester:
 
-    def __init__(self, df: DataFrame, y_columns: Union[list[str], str], columns_to_drop: Union[list[str], str] = None):
+    def __init__(self, df: DataFrame, y_columns: list, columns_to_drop: list = None):
         """
         The goal of this class is to take in the initial DataFrame, and so some initial data cleaning.
         Namely, replace the solvent names with SMILES, replace nan with zeros, and replace all the words with numbers.
