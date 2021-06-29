@@ -41,7 +41,6 @@ def cluster_data(data):
     return data
 
 
-
 def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=False):
     """
     Example set up for running a non tuned model
@@ -115,9 +114,8 @@ def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=Fa
 
 
 if __name__ == "__main__":
-    example_run(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
-                featurized=False, tuned=True)
+    example_run(algorithm="xgb", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
+                featurized=True, tuned=False)
     #example_tuned()
-
     # example_tuned()
 

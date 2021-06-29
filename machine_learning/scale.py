@@ -22,6 +22,13 @@ class Scaler:
             Exception("No option " + scale + " for data scaling")
 
         if scale is not None:
+
+            if len(train_features.shape) == 1:
+                train_features = train_features.to_numpy().reshape(-1, 1)
+                test_features = test_features.to_numpy().reshape(-1, 1)
+                if val_features is not None:
+                    val_features = val_features.to_numpy().reshape(-1, 1)
+
             train_features = scale.fit_transform(train_features)
             test_features = scale.transform(test_features)
 

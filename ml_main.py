@@ -1,8 +1,9 @@
 from pathlib import Path
-from os import urandom
+from random import randint
+from datetime import datetime
 
 from numpy import nan
-from pandas import read_csv
+from pandas import read_csv, DataFrame
 
 from machine_learning import Featurizer, DataSplitter, Scaler, name, Regressor, train, graph, Grid, HyperTune
 from machine_learning.misc import zip_run_name_files
@@ -38,8 +39,14 @@ def cluster_data(data):
     return data
 
 
-def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_percent, algorithm,
+def run_params(data, y_columns, drop_columns, paper_id_column, train_percent, algorithm,
                tuning_state, featurized_state, clustered_state, grouped_state, seed):
+
+    now = datetime.now()
+    date = now.strftime("%m_%d_%Y_time_%H:%M:%S")
+    run_name = f"{algorithm}_tuned_{tuning_state}_grouped_{grouped_state}_featurized_{featurized_state}_"
+    run_name += f"clustered_{clustered_state}_seed_{seed}__date_{date}"
+
     if clustered_state:
         data = cluster_data(data)
 
@@ -68,8 +75,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
 
     if tuning_state:
         grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
-        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50,
-                          cv_folds=3)  # Get parameters for hyper tuning
+        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=10, cv_folds=20)  # Get parameters for hyper tuning
         estimator, params, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     else:
         estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
@@ -86,7 +92,8 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
                                                                                                    fit_params=params,
                                                                                                    n=5)
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
-    graph.shap_impgraphs(algorithm, estimator, train_features, feature_list, run_name)
+    graph.pva_graph(scaled_predictions_stats, scaled_predictions, run_name, scaled=True)  # Get pva graph
+    # graph.shap_impgraphs(algorithm, estimator, train_features, feature_list, run_name)
     zip_run_name_files(run_name)
 
 
@@ -97,9 +104,7 @@ def main(data, seed):
             for featurized_state in featurized:
                 for algorithm in algorithms:
                     for tuning_state in tuning:
-                        run_name = name(algorithm, dataset, folder, featurized, tuning)
-                        run_name += f"{grouped_state}"
-                        run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_percent,
+                        run_params(data, y_columns, drop_columns, paper_id_column, train_percent,
                                    algorithm, tuning_state, featurized_state, clustered_state,
                                    grouped_state, seed)
 
@@ -113,11 +118,12 @@ if __name__ == "__main__":
     data_path = str(Path(__file__).parent / file_path)
     data = read_csv(data_path)
 
-    algorithms = ['nn', 'xgb', 'rf', 'gdb']
-    tuning = [True, False]
-    featurized = [True, False]
-    clustered = [True, False]
-    grouped = [True, False]
+    # algorithms = ['xgb', 'nn', 'rf', 'gdb']
+    algorithms = ['rf']
+    tuning = [True]
+    featurized = [False]
+    clustered = [False]
+    grouped = [False]
 
     train_percent = 0.8  # test_percent = 1 - train_percent
 
