@@ -30,8 +30,8 @@ def train_reg(algorithm, estimator, train_features, train_target,
     pva = pd.DataFrame([], columns=['actual', 'predicted'])
 
     for i in range(n):
-        
-        if fit_params:
+
+        if algorithm == "nn":
             estimator.fit(train_features, train_target, **fit_params)
 
         else:

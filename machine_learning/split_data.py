@@ -8,7 +8,7 @@ import numpy as np
 
 class DataSplitter:
 
-    def __init__(self, df: DataFrame, y_columns: Union[list[str], str],
+    def __init__(self, df: DataFrame, y_columns: list ,
                  train_percent: float, test_percent: float, val_percent: float = 0,
                  grouping_column: str = None, state: int = None, run_name: str = None):
         """
@@ -32,7 +32,7 @@ class DataSplitter:
 
         if not isinstance(y_columns, list):
             y_columns = [y_columns]
-        self.y_columns: list[str] = y_columns
+        self.y_columns: list = y_columns
         self.run_name : str = run_name
 
     @staticmethod

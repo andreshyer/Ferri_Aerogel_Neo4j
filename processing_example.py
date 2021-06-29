@@ -1,14 +1,15 @@
-
-"""
-TODO: redo examples
-"""
+from os import listdir, path, mkdir
+from re import match
+from shutil import move, make_archive, rmtree
 from pathlib import Path
-
-from numpy import nan
+from pandas import DataFrame, read_csv, concat
+import numpy as np
+from machine_learning import Featurizer, ComplexDataProcessor, DataSplitter, Scaler, HyperTune, Grid, Regressor, train, graph, name
 from numpy.random import randint
-from pandas import read_csv
-
-from machine_learning import Featurizer, DataSplitter, Scaler, HyperTune, Grid, Regressor, train, graph, name, misc
+import os
+"""
+TODO: redo examples 
+"""
 
 
 def cluster_data(data):
@@ -29,7 +30,7 @@ def cluster_data(data):
     si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
     data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]  # Grab Aerogels with TEOS
     data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]  # Grab sol-gel aerogels
-    data = data.loc[data['Formation Method (1)'].isin([nan])]  # Make sure that is the only formation method
+    data = data.loc[data['Formation Method (1)'].isin([np.nan])]  # Make sure that is the only formation method
 
     # Remove outliers
     mean_surface_area = data['Surface Area (m2/g)'].mean()
@@ -40,6 +41,29 @@ def cluster_data(data):
     data.reset_index(drop=True, inplace=True)
     return data
 
+def zip_run_name_files(run_name):
+
+    # Make sure a output directory exist
+    if not path.exists('output'):
+        mkdir('output')
+
+    # The directory to put files into
+    working_dir = Path(f'output/{run_name}')
+    mkdir(working_dir)
+
+    # The directory where files are now
+    #current_dir = Path(__file__).parent.absolute()
+    current_dir = Path.cwd()
+    # Move all files from current dir to working dir
+    for f in listdir():
+        if match(run_name, f):
+            move(current_dir / f, working_dir / f)
+
+    # Zip the new directory
+    make_archive(working_dir, 'zip', working_dir)
+
+    # Delete the non-zipped directory
+    rmtree(working_dir)
 
 
 def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=False):
@@ -50,7 +74,7 @@ def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=Fa
     if random_seed is not None:
         random_seed = randint(low=1, high=100)
     folder = "si_aerogels"
-    run_name = name(algorithm, dataset, folder, featurized, tuned)
+    run_name = name.name(algorithm, dataset, folder, featurized, tuned)
     
     #print("Created {0}".format(run_name))
     print("Algorithm: ", algorithm)
@@ -108,15 +132,16 @@ def example_run(algorithm, dataset, random_seed=None, featurized=False, tuned=Fa
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
     graph.pva_graph(scaled_predictions_stats, scaled_predictions, run_name, scaled=True)  # Get pva graph
 
-    #graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
+    graph.impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name) # Get feature imporance based on algorithm
     graph.shap_impgraphs(algorithm,estimator, train_features, feature_list, run_name)
 
-    misc.zip_run_name_files(run_name)
+    zip_run_name_files(run_name)
+
 
 
 if __name__ == "__main__":
-    example_run(algorithm="rf", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
-                featurized=False, tuned=True)
+    example_run(algorithm="xgb", dataset=r"si_aerogel_AI_machine_readable_v2.csv",
+                featurized=False, tuned=False)
     #example_tuned()
 
     # example_tuned()
