@@ -54,6 +54,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
         featurizer.remove_non_smiles_str_columns(suppress_warnings=True)
         featurizer.replace_compounds_with_smiles()
         data = featurizer.featurize_molecules(method='rdkit2d')
+
     else:
 
         temp_columns = list(data.filter(regex="Temp").columns)
@@ -87,6 +88,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
         featurizer.replace_cols_with_nan_with_mean(cols=duration_columns)
 
         data = featurizer.one_hot_encode_strings()
+
 
     if algorithm != "xgb":
         data = featurizer.replace_nan_with_zeros()
