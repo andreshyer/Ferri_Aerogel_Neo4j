@@ -1,7 +1,7 @@
 from pathlib import Path
 from os import urandom
 
-from numpy import nan
+from numpy import nan, isnan
 from pandas import read_csv
 
 from machine_learning import Featurizer, DataSplitter, Scaler, name, Regressor, train, graph, Grid, HyperTune
@@ -48,14 +48,45 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
         paper_id_column = None
 
     featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-    featurizer.remove_xerogels()
+    data = featurizer.remove_xerogels()
 
     if featurized_state:
         featurizer.remove_non_smiles_str_columns(suppress_warnings=True)
         featurizer.replace_compounds_with_smiles()
         data = featurizer.featurize_molecules(method='rdkit2d')
     else:
-        data = featurizer.replace_words_with_numbers(ignore_smiles=False)
+
+        temp_columns = list(data.filter(regex="Temp").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=temp_columns, num=20)
+
+        pressure_columns = list(data.filter(regex="Pressure").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=pressure_columns, num=0.101325)
+
+        ratio_columns = list(data.filter(regex="Ratio").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
+
+        ratio_columns = list(data.filter(regex="%").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
+
+        ph_columns = list(data.filter(regex="pH").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=ph_columns, num=7)
+
+        time_columns = list(data.filter(regex="Time").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
+
+        time_columns = list(data.filter(regex="time").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
+
+        molar_columns = list(data.filter(regex="\(M\)").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=molar_columns)
+
+        rate_columns = list(data.filter(regex="rate").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=rate_columns)
+
+        duration_columns = list(data.filter(regex="Duration").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=duration_columns)
+
+        data = featurizer.one_hot_encode_strings()
 
     if algorithm != "xgb":
         data = featurizer.replace_nan_with_zeros()
@@ -113,11 +144,11 @@ if __name__ == "__main__":
     data_path = str(Path(__file__).parent / file_path)
     data = read_csv(data_path)
 
-    algorithms = ['nn', 'xgb', 'rf', 'gdb']
-    tuning = [True, False]
-    featurized = [True, False]
-    clustered = [True, False]
-    grouped = [True, False]
+    algorithms = ['rf']
+    tuning = [False]
+    featurized = [False]
+    clustered = [False]
+    grouped = [False]
 
     train_percent = 0.8  # test_percent = 1 - train_percent
 
@@ -127,7 +158,7 @@ if __name__ == "__main__":
     y_columns = ['Surface Area (m2/g)']
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Gelation Time (mins)']
     paper_id_column = 'paper_id'  # Group by paper option
 
     main(data, seed)

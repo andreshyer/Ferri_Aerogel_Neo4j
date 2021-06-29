@@ -2,8 +2,8 @@ from typing import Union
 from pathlib import Path
 from warnings import warn
 
-from numpy import isnan
-from pandas import DataFrame, read_csv, Series
+from numpy import isnan, logical_not
+from pandas import DataFrame, read_csv, Series, get_dummies
 from sklearn.preprocessing import StandardScaler
 
 
@@ -108,6 +108,47 @@ class Ingester:
         :return: Pandas DataFrame
         """
         self.df = self.df.fillna(0)  # Replace blank spaces with 0
+        return self.df
+
+    def replace_cols_with_nan_with_number(self, cols, num):
+        """
+        Function to replace all nan values in a set of columns with a number
+
+        :param cols: List of columns, or String
+        :param num: Int or float of value to replace NaNs with
+        :return:
+        """
+
+        self.df[cols] = self.df[cols].fillna(value=num)
+        return self.df
+
+    def replace_cols_with_nan_with_mean(self, cols):
+        """
+        Function to replace all NaNs values with mean of other values in the column.
+        If all values are NaN, return column with zeros
+
+        :return:
+        """
+
+        for col in cols:
+            numpy_array = self.df[col].to_numpy()
+            mean = numpy_array[logical_not(isnan(numpy_array))].mean()
+            self.df[col] = self.df[col].fillna(value=mean)
+        return self.df
+
+    def one_hot_encode_strings(self):
+        """
+        This function will one-hot all string columns in the dataframe
+
+        :return:
+        """
+
+        for column in self.df:
+            if self.df[column].dtype == "object":
+                self.df[column] = self.df[column].fillna(value="NaN")
+                dummies = get_dummies(self.df[column], prefix=column)
+                self.df[dummies.columns] = dummies
+                self.df = self.df.drop(column, axis=1)
         return self.df
 
     def replace_words_with_numbers(self, ignore_smiles: bool = True):
