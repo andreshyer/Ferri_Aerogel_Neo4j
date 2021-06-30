@@ -6,10 +6,10 @@ from pandas import read_csv
 
 from machine_learning import Featurizer, DataSplitter, Scaler, name, Regressor, train, graph, Grid, HyperTune
 from machine_learning.misc import zip_run_name_files
+from machine_learning.featurization import featurize_si_aerogels
 
 
 def cluster_data(data):
-
     def test_if_has(row):
         values = row.values
         for value in values:
@@ -47,51 +47,13 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
         data = data.drop([paper_id_column], axis=1)
         paper_id_column = None
 
-    featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-    data = featurizer.remove_xerogels()
-
     if featurized_state:
-        featurizer.remove_non_smiles_str_columns(suppress_warnings=True)
-        featurizer.replace_compounds_with_smiles()
-        data = featurizer.featurize_molecules(method='rdkit2d')
+        data = featurize_si_aerogels(df=data, str_method="rdkit", num_method="mean",
+                                     y_columns=y_columns, drop_columns=drop_columns, remove_xerogels=True)
 
     else:
-
-        temp_columns = list(data.filter(regex="Temp").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=temp_columns, num=20)
-
-        pressure_columns = list(data.filter(regex="Pressure").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=pressure_columns, num=0.101325)
-
-        ratio_columns = list(data.filter(regex="Ratio").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
-
-        ratio_columns = list(data.filter(regex="%").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
-
-        ph_columns = list(data.filter(regex="pH").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=ph_columns, num=7)
-
-        time_columns = list(data.filter(regex="Time").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
-
-        time_columns = list(data.filter(regex="time").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
-
-        molar_columns = list(data.filter(regex="\(M\)").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=molar_columns)
-
-        rate_columns = list(data.filter(regex="rate").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=rate_columns)
-
-        duration_columns = list(data.filter(regex="Duration").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=duration_columns)
-
-        data = featurizer.one_hot_encode_strings()
-
-
-    if algorithm != "xgb":
-        data = featurizer.replace_nan_with_zeros()
+        data = featurize_si_aerogels(df=data, str_method="one_hot_encode", num_method="smart_values",
+                                     y_columns=y_columns, drop_columns=drop_columns, remove_xerogels=True)
 
     splitter = DataSplitter(df=data, y_columns=y_columns, train_percent=train_percent,
                             test_percent=(1 - train_percent), val_percent=0, grouping_column=paper_id_column,
@@ -101,7 +63,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
 
     if tuning_state:
         grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
-        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50,
+        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=20,
                           cv_folds=3)  # Get parameters for hyper tuning
         estimator, params, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     else:
@@ -124,7 +86,6 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
 
 
 def main(data, seed):
-
     for clustered_state in clustered:
         for grouped_state in grouped:
             for featurized_state in featurized:
@@ -138,7 +99,6 @@ def main(data, seed):
 
 
 if __name__ == "__main__":
-
     dataset = r"si_aerogel_AI_machine_readable_v2.csv"
     folder = "si_aerogels"
     file_path = "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv/"
@@ -147,7 +107,7 @@ if __name__ == "__main__":
     data = read_csv(data_path)
 
     algorithms = ['rf']
-    tuning = [False]
+    tuning = [True]
     featurized = [False]
     clustered = [False]
     grouped = [False]

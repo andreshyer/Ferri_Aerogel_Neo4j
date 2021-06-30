@@ -8,7 +8,7 @@ import numpy as np
 
 class DataSplitter:
 
-    def __init__(self, df: DataFrame, y_columns: list ,
+    def __init__(self, df: DataFrame, y_columns: list,
                  train_percent: float, test_percent: float, val_percent: float = 0,
                  grouping_column: str = None, state: int = None, run_name: str = None):
         """
@@ -33,7 +33,7 @@ class DataSplitter:
         if not isinstance(y_columns, list):
             y_columns = [y_columns]
         self.y_columns: list = y_columns
-        self.run_name : str = run_name
+        self.run_name: str = run_name
 
     @staticmethod
     def __reshape_df__(df: DataFrame):  # Test if dataframe only has one column, if so return a series with info
@@ -67,12 +67,14 @@ class DataSplitter:
         len_val = len_total * val_percent
 
         p1 = (len_train + len_val) / (len_train + len_test + len_val)  # Some /fancy/ math done here :)
-        train_features, test_features, train_target, test_target = train_test_split(x, y, train_size=p1, random_state=self.state)
+        train_features, test_features, train_target, test_target = train_test_split(x, y, train_size=p1,
+                                                                                    random_state=self.state)
 
         if len_val > 0:
             p2 = len_train / (len_train + len_val)  # Here as well :P
-            train_features, val_features, train_target, val_target = train_test_split(train_features, train_target, train_size=p2,
-                                                              random_state=self.state)
+            train_features, val_features, train_target, val_target = train_test_split(train_features, train_target,
+                                                                                      train_size=p2,
+                                                                                      random_state=self.state)
         else:
             val_features, val_target = None, None
 
@@ -89,9 +91,9 @@ class DataSplitter:
         x = self.df.drop(self.y_columns, axis=1)
         len_total = len(self.df)
         test_features, train_features, val_features, test_target, train_target, val_target = self.__do_split__(x, y,
-                                                                           self.train_percent,
-                                                                           self.test_percent,
-                                                                           self.val_percent)
+                                                                                                               self.train_percent,
+                                                                                                               self.test_percent,
+                                                                                                               self.val_percent)
         return test_features, train_features, val_features, test_target, train_target, val_target
 
     def __split_by_group__(self):
@@ -152,7 +154,7 @@ class DataSplitter:
         # Verify the arrays are the correct shape
         test_features, test_target = self.__reshape_df__(test_features), self.__reshape_df__(test_target)
         train_features, train_target = self.__reshape_df__(train_features), self.__reshape_df__(train_target)
-        
+
         if self.run_name is not None:
             train_features.to_csv(self.run_name + "_train_set.csv")
             test_features.to_csv(self.run_name + "_test_set.csv")
@@ -162,7 +164,8 @@ class DataSplitter:
             val_features, val_target = self.__reshape_df__(val_features), self.__reshape_df__(val_target)
             if self.run_name is not None:
                 val_features.to_csv(self.run_name + "_val_set.csv")
-        test_features, train_features, val_features = np.array(test_features), np.array(train_features), np.array(val_features)
+        test_features, train_features, val_features = np.array(test_features), np.array(train_features), np.array(
+            val_features)
         if self.val_percent == 0.0:
             return test_features, train_features, test_target, train_target, feature_list
         else:

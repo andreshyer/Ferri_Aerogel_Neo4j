@@ -73,6 +73,13 @@ class Featurizer(Ingester):
         self.raw_df: DataFrame = self.df.copy()
 
     def reset_featurization(self):
+        """
+        This will remove all featurizations done, and will reset the featurizer object.
+        Use with cation.
+
+        :return: The original DataFrame inputted into featurizer object
+        """
+
         self.df = self.raw_df.copy()
         return self.df
 
@@ -222,3 +229,78 @@ class Featurizer(Ingester):
         featurized_df.reset_index(drop=True, inplace=True)
         self.df = concat((self.df, featurized_df), axis=1)  # Concat the main df to the featurized df
         return self.df
+
+
+def featurize_si_aerogels(df: DataFrame, str_method: str, num_method: str, y_columns: list, drop_columns: list = None,
+                          remove_xerogels: bool = True):
+
+    str_methods = ["rdkit", "one_hot_encode", "number_index"]
+    num_methods = ["zeros", "smart_values", "mean"]
+
+    if str_method not in str_methods:
+        raise TypeError(f"str_method {str_method} to replace strings with numbers not found in string methods."
+                        f"\nList of available string methods are {str_methods}")
+
+    if num_method not in num_methods:
+        raise TypeError(f"num_method {num_method} to replace nan with in number columns not found in number methods."
+                        f"\nList of available number methods are {num_methods}")
+
+    # Define featurizer class to do calculations with
+    featurizer = Featurizer(df=df, y_columns=y_columns, columns_to_drop=drop_columns)
+    df = featurizer.df
+
+    if remove_xerogels:
+        df = featurizer.remove_xerogels()
+
+    # Featurize the string columns
+    if str_method == "one_hot_encode":
+        df = featurizer.one_hot_encode_strings()
+    if str_method == "rdkit":
+        featurizer.remove_non_smiles_str_columns(suppress_warnings=True)  # TODO think of better way to do this
+        featurizer.replace_compounds_with_smiles()
+        df = featurizer.featurize_molecules(method='rdkit2d')
+    if str_method == "number_index":
+        df = featurizer.replace_words_with_numbers(ignore_smiles=False)
+
+    # Featurize the number columns
+    if num_method == "zeros":
+        df = featurizer.replace_nan_with_zeros()
+    if num_method == "mean":
+        df = featurizer.replace_cols_with_nan_with_mean(cols=df.columns)
+    if num_method == "smart_values":
+
+        # Set NaN in temp columns as room temperature
+        temp_columns = list(df.filter(regex="Temp").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=temp_columns, num=25)
+
+        # Set NaN in pressure columns as atmospheric pressure
+        pressure_columns = list(df.filter(regex="Pressure").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=pressure_columns, num=0.101325)
+
+        # Set columns to zero where averages do not make sense
+        ratio_columns = list(df.filter(regex="Ratio").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
+
+        ratio_columns = list(df.filter(regex="%").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
+
+        ph_columns = list(df.filter(regex="pH").columns)
+        featurizer.replace_cols_with_nan_with_number(cols=ph_columns, num=7)
+
+        # Set columns to averages where it makes more sense than zero or a set value
+        time_columns = list(df.filter(regex="Time").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
+
+        time_columns = list(df.filter(regex="time").columns)  #
+        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
+
+        molar_columns = list(df.filter(regex="\(M\)").columns)
+        featurizer.replace_cols_with_nan_with_mean(cols=molar_columns)
+
+        rate_columns = list(df.filter(regex="rate").columns)  #
+        featurizer.replace_cols_with_nan_with_mean(cols=rate_columns)
+
+        duration_columns = list(df.filter(regex="Duration").columns)
+        df = featurizer.replace_cols_with_nan_with_mean(cols=duration_columns)
+
+    return df

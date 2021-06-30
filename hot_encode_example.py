@@ -21,9 +21,9 @@ def main():
     paper_id_column = None
 
     train_percent = 0.8  # test_percent = 1 - train_percent
+    tuned = False
     seed = None
     algorithm = 'rf'
-    run_name = "encode_example"
 
     print("Featurizing Data...")
 
