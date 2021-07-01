@@ -66,8 +66,8 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
     print("Tuning Model...")
     if tuning_state:
         grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
-        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=20,
-                          cv_folds=3)  # Get parameters for hyper tuning
+        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50,
+                          cv_folds=5)  # Get parameters for hyper tuning
         estimator, params, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     else:
         estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
@@ -84,6 +84,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
                                                                                                    fit_params=params,
                                                                                                    n=5)
     graph.pva_graph(predictions_stats, predictions, run_name)  # Get pva graph
+    graph.pva_graph(scaled_predictions_stats, scaled_predictions, run_name, scaled=True)
     graph.shap_impgraphs(algorithm, estimator, train_features, feature_list, run_name)
     zip_run_name_files(run_name)
 
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     data = convert_machine_readable(data_path)
 
     algorithms = ['rf']
-    tuning = [True]
+    tuning = [False]
     featurized = [False]
     clustered = [False]
     grouped = [False]
@@ -122,14 +123,15 @@ if __name__ == "__main__":
     # seed = int.from_bytes(urandom(3), "big")  # Generate an actual random number
     seed = None
 
-    y_columns = ['Surface Area (m2/g)']
+    y_columns = ['Gelation Time (mins)']
 
     author_columns = list(data.filter(regex="Author").columns)
     notes_columns = list(data.filter(regex="Notes").columns)
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Gelation Time (mins)',
-                    'Final Material', "Year", "Cited References (#)", "Times Cited (#)"]
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Surface Area (m2/g)',
+                    'Final Material', "Year", "Cited References (#)", "Times Cited (#)",
+                    "pH final sol"]
     drop_columns.extend(author_columns)
     drop_columns.extend(notes_columns)
 

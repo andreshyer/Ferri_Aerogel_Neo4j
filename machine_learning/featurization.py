@@ -284,23 +284,20 @@ def featurize_si_aerogels(df: DataFrame, str_method: str, num_method: str, y_col
         ratio_columns = list(df.filter(regex="%").columns)
         featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
 
-        ph_columns = list(df.filter(regex="pH").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=ph_columns, num=7)
-
         # Set columns to averages where it makes more sense than zero or a set value
         time_columns = list(df.filter(regex="Time").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
+        featurizer.replace_cols_with_nan_with_number(cols=time_columns, num=0)
 
         time_columns = list(df.filter(regex="time").columns)  #
-        featurizer.replace_cols_with_nan_with_mean(cols=time_columns)
+        featurizer.replace_cols_with_nan_with_number(cols=time_columns, num=0)
 
         molar_columns = list(df.filter(regex="\(M\)").columns)
-        featurizer.replace_cols_with_nan_with_mean(cols=molar_columns)
+        featurizer.replace_cols_with_nan_with_number(cols=molar_columns, num=0)
 
         rate_columns = list(df.filter(regex="Rate").columns)  #
-        featurizer.replace_cols_with_nan_with_mean(cols=rate_columns)
+        featurizer.replace_cols_with_nan_with_number(cols=rate_columns, num=0)
 
         duration_columns = list(df.filter(regex="Duration").columns)
-        df = featurizer.replace_cols_with_nan_with_mean(cols=duration_columns)
+        df = featurizer.replace_cols_with_nan_with_number(cols=duration_columns, num=0)
 
     return df
