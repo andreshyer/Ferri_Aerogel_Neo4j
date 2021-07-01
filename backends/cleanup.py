@@ -1,5 +1,5 @@
 import pandas as pd
-
+from numpy import nan
 
 def cleanup(file):
     df = pd.read_excel(file)
@@ -27,6 +27,9 @@ def cleanup_dataframe(df: pd.DataFrame):
             return float(n)
         except ValueError:
             return n
+        except TypeError:
+            print(n)
+            raise TypeError
 
     rows = df.where(df.notnull(), None)
     rows = rows.to_dict('records')
@@ -34,10 +37,13 @@ def cleanup_dataframe(df: pd.DataFrame):
     for row in rows:
         new_row = {}
         for key, value in row.items():
-            new_row[key] = __ttcn__(value)
+            if value == "----":
+                new_row[key] = nan
+            else:
+                new_row[key] = __ttcn__(value)
         new_rows.append(new_row)
-    return new_rows
+    return pd.DataFrame(new_rows)
 
 
 if __name__ == "__main__":
-    cleanup("../files/si_aerogels/si_aerogels.xlsx")
+    cleanup("si_aerogels.xlsx")

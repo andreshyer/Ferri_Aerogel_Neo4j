@@ -2,11 +2,12 @@ from pathlib import Path
 from os import urandom
 
 from numpy import nan, isnan
-from pandas import read_csv
+from pandas import read_csv, read_excel
 
 from machine_learning import Featurizer, DataSplitter, Scaler, name, Regressor, train, graph, Grid, HyperTune
 from machine_learning.misc import zip_run_name_files
 from machine_learning.featurization import featurize_si_aerogels
+from backends.molarity_calculator import convert_machine_readable
 
 
 def cluster_data(data):
@@ -101,10 +102,10 @@ def main(data, seed):
 if __name__ == "__main__":
     dataset = r"si_aerogel_AI_machine_readable_v2.csv"
     folder = "si_aerogels"
-    file_path = "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv/"
+    file_path = "files/si_aerogels/si_aerogels.xlsx/"
 
     data_path = str(Path(__file__).parent / file_path)
-    data = read_csv(data_path)
+    data = convert_machine_readable(data_path)
 
     algorithms = ['rf']
     tuning = [True]
@@ -118,9 +119,16 @@ if __name__ == "__main__":
     seed = None
 
     y_columns = ['Surface Area (m2/g)']
+
+    author_columns = list(data.filter(regex="Author").columns)
+    notes_columns = list(data.filter(regex="Notes").columns)
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Gelation Time (mins)']
-    paper_id_column = 'paper_id'  # Group by paper option
+                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase',
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Gelation Time (mins)',
+                    'Final Material', "Year", "Cited References (#)", "Times Cited (#)"]
+    drop_columns.extend(author_columns)
+    drop_columns.extend(notes_columns)
+
+    paper_id_column = 'Title'  # Group by paper option
 
     main(data, seed)

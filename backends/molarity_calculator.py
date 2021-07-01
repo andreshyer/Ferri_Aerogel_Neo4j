@@ -2,15 +2,25 @@ import pandas as pd
 import requests
 import json
 from ast import literal_eval
+from pathlib import Path
+from os import listdir
+from re import match
+
+from numpy import nan, isnan
+
+from backends import cleanup_dataframe
 
 
 def fetch_density_molar_mass(compound):
-    cached_compound_info = pd.read_csv('cached_compound_info.csv')
+
+    cached_compound_file = Path(__file__).parent / 'cached_compound_info.csv'
+
+    cached_compound_info = pd.read_csv(cached_compound_file)
     if compound in cached_compound_info['compound'].tolist():
         values = cached_compound_info.loc[cached_compound_info['compound'] == compound].to_dict('records')[0]
         return values['density'], values['molar_mass'], values['cid']
 
-    # Fetch cid number of compund
+    # Fetch cid number of compound
     cid = requests.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{compound}/cids/TXT").text
     cid = cid.split()[0]
 
@@ -62,19 +72,16 @@ def fetch_density_molar_mass(compound):
 
     cached_compound_info = cached_compound_info.append({'compound': compound, 'density': density,
                                                         'molar_mass': molar_mass, 'cid': cid}, ignore_index=True)
-    cached_compound_info.to_csv('cached_compound_info.csv', index=False)
+    cached_compound_info.to_csv(cached_compound_file, index=False)
 
     return density, molar_mass, cid
 
 
-def calculate_molarities(row):
-    pore_volume = row['Pore Volume (cm3/g)']
-    porosity = row['Porosity']
-    if pore_volume == "----" or porosity == "----":
+def calculate_true_molarities(row):
+    volume = row['Calculated Volume (cm3/g)']
+    if volume == "----" or volume == "----":
         return None
-    pore_volume = float(pore_volume)
-    porosity = float(porosity)
-    volume = pore_volume / porosity * 0.001  # Convert cc to L
+    volume = float(volume) * 0.001  # Convert cc to L
 
     raw_compounds = row['Material'].split(",")
     raw_compounds = [i.strip() for i in raw_compounds]
@@ -88,10 +95,10 @@ def calculate_molarities(row):
 
         molar_ratios = molar_ratios.split(",")
 
-        if len(molar_ratios) != len(raw_compounds):
-            print(f"\nNumber of molar ratios do not match the number of compounds"
-                  f"\n{row['Final Material']}")
-            return
+        # if len(molar_ratios) != len(raw_compounds):
+        #     print(f"\nNumber of molar ratios do not match the number of compounds"
+        #           f"\n{row['Final Material']}")
+        #     return
 
         filtered_molar_ratios = []
         for i, molar_ratio in enumerate(molar_ratios):
@@ -210,29 +217,26 @@ def calculate_molarities(row):
     return None
 
 
-def main():
-    df = pd.read_excel('KnowledgeGraphAlgorithm2017.xlsx')
-    df = df.dropna(how='all', axis=0)
+def gather_true_molarity_info():
+    # df = pd.read_excel('KnowledgeGraphAlgorithm2016.xlsx')
+    # df = df.dropna(how='all', axis=0)
 
-    new_rows = []
-    for index, row in df.iterrows():
-        row = dict(row)
-        new_row = {"Final Material": row['Final Material']}
-        molarities = calculate_molarities(row)
-        new_row['calculated_molarities'] = molarities
-        new_rows.append(new_row)
+    algo_paths = Path(__file__).parent / "molarity_algo_files"
 
-    new_df = pd.DataFrame(new_rows)
-    new_df.to_excel('molarity_output.xlsx', index=False)
+    molarity_dict = {}
+    for file in listdir(algo_paths):
+        file = algo_paths / file
+        df = pd.read_excel(file)
+        df = df.dropna(how='all', axis=0)
+        for index, row in df.iterrows():
+            row = dict(row)
+            molarities = calculate_true_molarities(row)
+            molarity_dict[row['Final Material']] = molarities
+
+    return molarity_dict
 
 
-def insert():
-    main_file = "../files/si_aerogels/si_aerogels.xlsx"
-    molarity_info_file = "KnowledgeGraphMolarityAlgorithm2020.xlsx"
-
-    molarity_info = pd.read_excel(molarity_info_file)
-    molarity_info = dict(zip(molarity_info['Final Material'], molarity_info['calculated_molarities']))
-
+def insert_molarity_info(main_file, molarity_info):
     main_data: pd.DataFrame = pd.read_excel(main_file)
 
     columns = {"Si Precursor": "Si Precursor Concentration (M)",
@@ -252,9 +256,7 @@ def insert():
         row = dict(row)
         if row['Final Material'] in molarity_info.keys():
             molarities = molarity_info[row['Final Material']]
-            if str(molarities) != "nan":
-                molarities = molarities.replace("'", '"')
-                molarities = literal_eval(molarities)
+            if molarities:
                 for column in columns:
                     molarity_string = ""
                     compounds = str(row[column]).split(", ")  # Cast value first to string to catch numpy.nan's
@@ -267,10 +269,69 @@ def insert():
                             molarity_string += f"{molarity}, "
                     if molarity_string:
                         molarity_string = molarity_string[:-2]
-                        main_data.at[index, columns[column]] = molarity_string
-    main_data.to_excel(main_file, index=False)
+                        main_data.loc[index, [columns[column]]] = molarity_string
+    return main_data
 
 
-if __name__ == "__main__":
-    # main()
-    insert()
+def make_data_machine_readable(df: pd.DataFrame):
+
+    for col in df.columns:
+        if col != "Final Material" and "Notes" not in col and "Title" not in col:
+            try:
+                df[col].astype(float)
+            except ValueError:
+                length = 1
+                for value in df[col].tolist():
+                    if str(value).find(", ") != -1:
+                        if len(value.split(", ")) > length:
+                            length = len(value.split(", "))
+                if length > 1:
+                    new_columns_values = []
+                    for i in range(1, length+1):
+                        new_columns_values.append([])
+                    for value in df[col].tolist():
+                        if str(value) == 'nan':
+                            split_values = [""] * length
+                        else:
+                            split_values = str(value).split(", ")
+                            split_values.extend([""] * (length - len(split_values)))
+                        for index, sub_value in enumerate(split_values):
+                            new_columns_values[index].append(sub_value)
+
+                    for i in range(len(new_columns_values)):
+                        new_col_name = f"{col} ({i})"
+                        df[new_col_name] = new_columns_values[i]
+                    df = df.drop([col], axis=1)
+    return df
+
+
+def replace_ambient_with_numbers(df):
+
+    for col in df:
+        for index, val in enumerate(df[col]):
+            if "Temp" in col:
+                if val == "Ambient":
+                    df.loc[index, col] = 25
+            if "Pressure" in col:
+                if val == "Ambient":
+                    df.loc[index, col] = 0.101
+    return df
+
+
+def convert_machine_readable(si_data_file):
+    molarity_dict = gather_true_molarity_info()
+    si_data = insert_molarity_info(main_file=si_data_file, molarity_info=molarity_dict)
+    si_data = make_data_machine_readable(si_data)
+    si_data = cleanup_dataframe(si_data)
+    si_data = si_data.replace("", nan)
+    si_data = si_data.fillna(value=nan)
+    si_data = replace_ambient_with_numbers(si_data)
+
+    for col in si_data:
+        try:
+            si_data[col] = si_data[col].astype(float)
+        except ValueError:
+            pass
+
+    return si_data
+
