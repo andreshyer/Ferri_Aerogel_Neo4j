@@ -1,7 +1,7 @@
 from pathlib import Path
 from os import urandom
 
-from numpy import nan, isnan
+from numpy import nan, isnan, array
 from pandas import read_csv, read_excel
 
 from machine_learning import Featurizer, DataSplitter, Scaler, name, Regressor, train, graph, Grid, HyperTune
@@ -48,6 +48,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
         data = data.drop([paper_id_column], axis=1)
         paper_id_column = None
 
+    print("Featurizing Data...")
     if featurized_state:
         data = featurize_si_aerogels(df=data, str_method="rdkit", num_method="mean",
                                      y_columns=y_columns, drop_columns=drop_columns, remove_xerogels=True)
@@ -62,6 +63,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
     test_features, train_features, test_target, train_target, feature_list = splitter.split_data()
     test_features, train_features = Scaler().scale_data("std", train_features, test_features)  # Scaling features
 
+    print("Tuning Model...")
     if tuning_state:
         grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
         tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=20,
@@ -105,6 +107,8 @@ if __name__ == "__main__":
     file_path = "files/si_aerogels/si_aerogels.xlsx/"
 
     data_path = str(Path(__file__).parent / file_path)
+
+    print("Gathering data...")
     data = convert_machine_readable(data_path)
 
     algorithms = ['rf']

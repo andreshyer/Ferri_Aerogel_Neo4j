@@ -297,7 +297,7 @@ def featurize_si_aerogels(df: DataFrame, str_method: str, num_method: str, y_col
         molar_columns = list(df.filter(regex="\(M\)").columns)
         featurizer.replace_cols_with_nan_with_mean(cols=molar_columns)
 
-        rate_columns = list(df.filter(regex="rate").columns)  #
+        rate_columns = list(df.filter(regex="Rate").columns)  #
         featurizer.replace_cols_with_nan_with_mean(cols=rate_columns)
 
         duration_columns = list(df.filter(regex="Duration").columns)
