@@ -67,7 +67,7 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
     if tuning_state:
         grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
         tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50,
-                          cv_folds=5)  # Get parameters for hyper tuning
+                          cv_folds=10)  # Get parameters for hyper tuning
         estimator, params, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     else:
         estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
@@ -103,17 +103,17 @@ def main(data, seed):
 
 
 if __name__ == "__main__":
-    dataset = r"si_aerogel_AI_machine_readable_v2.csv"
+    dataset = r"machine_learning_si_aerogels.csv"
     folder = "si_aerogels"
-    file_path = "files/si_aerogels/si_aerogels.xlsx/"
+    file_path = "files/si_aerogels/machine_learning_si_aerogels.xlsx/"
 
     data_path = str(Path(__file__).parent / file_path)
 
     print("Gathering data...")
     data = convert_machine_readable(data_path)
 
-    algorithms = ['rf']
-    tuning = [False]
+    algorithms = ['xgb', 'gdb', 'rf']
+    tuning = [True]
     featurized = [False]
     clustered = [False]
     grouped = [False]
@@ -123,17 +123,11 @@ if __name__ == "__main__":
     # seed = int.from_bytes(urandom(3), "big")  # Generate an actual random number
     seed = None
 
-    y_columns = ['Gelation Time (mins)']
+    y_columns = ['Surface Area (m2/g)']
 
-    author_columns = list(data.filter(regex="Author").columns)
-    notes_columns = list(data.filter(regex="Notes").columns)
     drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
                     'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Surface Area (m2/g)',
-                    'Final Material', "Year", "Cited References (#)", "Times Cited (#)",
-                    "pH final sol"]
-    drop_columns.extend(author_columns)
-    drop_columns.extend(notes_columns)
+                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Gelation Time (mins)']
 
     paper_id_column = 'Title'  # Group by paper option
 

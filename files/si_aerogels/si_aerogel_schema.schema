@@ -23,6 +23,7 @@ Node|final_gel|FinalGel  # Core Node
     -sol_notes: Sol Notes
     -gelation_and_washing_notes: Gelation/Washing Notes
     -general_notes: Notes
+    -gelation_time: Gelation Time mins
 
 
 ### Crystalline Phase###
@@ -218,7 +219,6 @@ Node|gelation|Gelation  # Core Node
     --final_material: Final Material *
     -temp: Gelation Temp C
     -pressure: Gelation Pressure MPa
-    -gelation_time: Gelation Time mins
 Rel|final_gel->gelation|gel_formed_by
 
 Node|gelation_agent|GelationAgent
