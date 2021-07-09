@@ -310,6 +310,52 @@ class ReadSchema:
         else:
             self.__merge_non_bulk__(df)
 
+    def check_schema(self, df, ignore_warning=False, suppress_warning=False):
+
+        df_columns = set(df.columns)
+        referenced_columns = []
+
+        for node_key, node_props in self.holding_nodes.items():
+            for prop, prop_column in node_props['merge_props'].items():
+                if prop not in node_props['strict_props']:
+                    referenced_columns.append(prop_column)
+            for prop, prop_column in node_props['general_props'].items():
+                if prop not in node_props['strict_props']:
+                    referenced_columns.append(prop_column)
+
+        for rel in self.holding_relationships:
+            for prop, prop_column in rel['merge_props'].items():
+                if prop not in rel['strict_props']:
+                    referenced_columns.append(prop_column)
+            for prop, prop_column in rel['general_props'].items():
+                if prop not in rel['strict_props']:
+                    referenced_columns.append(prop_column)
+
+        referenced_columns = set(referenced_columns)
+        error = False
+
+        if referenced_columns - df_columns:
+            if not suppress_warning:
+                warn(f""
+                     f"The following columns were referenced in the schema file, but do not exist in the "
+                     f"DataFrame columns {list(referenced_columns - df_columns)}", SyntaxWarning)
+            error = True
+
+        if df_columns - referenced_columns:
+            if not suppress_warning:
+                warn(f""
+                     f"The following columns exist in the DataFrame, but were not reference in the "
+                     f"schema file {list(df_columns - referenced_columns)}", SyntaxWarning)
+            error = True
+
+        if not ignore_warning:
+            if error:
+                raise SyntaxWarning("Raising SyntaxWarning. Please see warnings for cause of error. If you wish to "
+                                    "ignore this error, then pass ignore_warning=True")
+
+        # print(df_columns)
+        # print(referenced_columns)
+
 
 if __name__ == "__main__":
     file = str(Path(__file__).parent.parent / "files/other/example.schema")

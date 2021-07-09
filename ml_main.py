@@ -112,7 +112,7 @@ if __name__ == "__main__":
     print("Gathering data...")
     data = convert_machine_readable(data_path)
 
-    algorithms = ['xgb', 'gdb', 'rf']
+    algorithms = ['rf']
     tuning = [True]
     featurized = [False]
     clustered = [False]

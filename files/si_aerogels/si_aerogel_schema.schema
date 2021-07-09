@@ -14,7 +14,6 @@ Node|final_gel|FinalGel  # Core Node
     -pore_volume: Pore Volume cm3/g
     -average_pore_diameter: Average Pore Diameter nm
     -average_pore_size: Average Pore Size nm
-    -nano_particle_size: Nanoparticle Size nm
     -surface_area: Surface Area m2/g
     -bulk_density: Bulk Density g/cm3
     -young_modulus: Young Modulus MPa
@@ -24,6 +23,8 @@ Node|final_gel|FinalGel  # Core Node
     -gelation_and_washing_notes: Gelation/Washing Notes
     -general_notes: Notes
     -gelation_time: Gelation Time mins
+    -combined_sol_stir_time: Combined Sol Stir Time min
+    -combined_sol_standing_time: Combined Sol 2 Standing time hr
 
 
 ### Crystalline Phase###
@@ -76,11 +77,13 @@ Rel|lit_info->author_3|written_by
 
 Node|author_4|Author
     --name: Authors 4 *
+    -email: Author Emails 4
     -corresponding: {False}
 Rel|lit_info->author_4|written_by
 
 Node|author_5|Author
     --name: Authors 5 *
+    -email: Author Emails 5
     -corresponding: {False}
 Rel|lit_info->author_5|written_by
 
@@ -140,6 +143,7 @@ Rel|final_gel->formation_method_0|formed_by
 Node|sol_1|Sol  # Core Node
     --final_material: Final Material *
     -stir_time: Sol 1 Stir Time min
+    -stir_rate: Sol 1 Stir rate rpm
     -standing_time: Sol 1 Standing time hr
     -temp: Sol 1 Temp C
     -pH: pH Sol 1
@@ -189,8 +193,7 @@ Rel|sol_1->sol_1_solvent_9|uses_solvent
 Node|sol_2|Sol  # Core Node
     --final_material: Final Material *
     -stir_rate: Sol 2 Stir rate rpm
-    -stir_time: Combined Sol Stir Time min
-    -standing_time: Combined Sol 2 Standing time hr
+    -stir_time: Sol 2 Stir Time min
     -temp: Sol 2 Temp C
     -pH: pH Sol 2
 Rel|final_gel->sol_2|uses_sol
@@ -224,6 +227,7 @@ Rel|final_gel->gelation|gel_formed_by
 Node|gelation_agent|GelationAgent
     --agent: Gelation Agent *
 Rel|gelation->gelation_agent|uses_gelation_agent
+    -concentration: Gelation Agent M
 
 
 ### Drying Method ###
@@ -233,6 +237,14 @@ Node|drying_steps|DryingSteps  # Core Node
     -notes: Drying Notes  # TODO add max and min temperature in drying steps as properties here
 Rel|final_gel->drying_steps|dried_by
 
+Node|drying_solvent_1|Solvent
+    --name: Drying Solvent 0*
+Rel|drying_steps->drying_solvent_1|uses_drying_solvent
+
+Node|drying_solvent_2|Solvent
+    --name: Drying Solvent 1*
+Rel|drying_steps->drying_solvent_2|uses_drying_solvent
+
 Node|drying_method_1|DryingMethod
     --method: Drying Method *
 Rel|drying_steps->drying_method_1|uses_drying_method
@@ -240,11 +252,6 @@ Rel|drying_steps->drying_method_1|uses_drying_method
     -temp: Drying Temp C
     -pressure: Drying Pressure MPa
     -time: Drying Time hrs
-
-Node|drying_solvent_1|Solvent
-    --name: Drying Solvent *
-Rel|drying_steps->drying_solvent_1|uses_drying_solvent
-    -step: {1}
 
 Node|drying_method_2|DryingMethod
     --method: Drying Method 2 *
@@ -254,9 +261,9 @@ Rel|drying_steps->drying_method_2|uses_drying_method
     -pressure: Drying Pressure 2 MPa
     -time: Drying Time 2 hrs
 
-Node|drying_solvent_2|Solvent
+Node|drying_atmosphere_2|Atmosphere
     --name: Drying Atmosphere 2 *
-Rel|drying_steps->drying_solvent_2|uses_drying_solvent
+Rel|drying_steps->drying_atmosphere_2|uses_drying_atmosphere
     -step: {2}
 
 Node|drying_method_3|DryingMethod
@@ -267,9 +274,9 @@ Rel|drying_steps->drying_method_3|uses_drying_method
     -pressure: Drying Pressure 3 MPa
     -time: Drying Time 3 hrs
 
-Node|drying_solvent_3|Solvent
+Node|drying_atmosphere_3|Atmosphere
     --name: Drying Atmosphere 3 *
-Rel|drying_steps->drying_solvent_3|uses_drying_solvent
+Rel|drying_steps->drying_atmosphere_3|uses_drying_atmosphere
     -step: {3}
 
 Node|drying_method_4|DryingMethod
@@ -293,6 +300,7 @@ Rel|drying_steps->drying_method_5|uses_drying_method
 
 Node|sintering|Sintering
     --final_material: Final Material *
+    -atmosphere: Sintering Atmosphere
     -temp: Sintering Temp C
     -time: Sintering Time min
     -ramp_rate: Ramp Rate C/min
@@ -391,6 +399,16 @@ Node|washing_solvent_4_1|Solvent
 Rel|washing_steps->washing_solvent_4_1|uses_washing_solvent
     -step: {4}
 
+Node|washing_solvent_4_2|Solvent
+    --name: Wash Solvent 4 2 *
+Rel|washing_steps->washing_solvent_4_2|uses_washing_solvent
+    -step: {4}
+
+Node|washing_solvent_4_3|Solvent
+    --name: Wash Solvent 4 3 *
+Rel|washing_steps->washing_solvent_4_3|uses_washing_solvent
+    -step: {4}
+
 Node|washing_solvent_5_0|Solvent
     --name: Wash Solvent 5 0 *
 Rel|washing_steps->washing_solvent_5_0|uses_washing_solvent
@@ -455,17 +473,19 @@ Rel|final_gel->si_precursor|uses_si_precursor
 Node|addition_si_co_precursor_0|SiPrecursor  # TODO add volume ratios
     --name: Additional Si Co-Precursors 0 *
 Rel|final_gel->addition_si_co_precursor_0|uses_si_precursor
-    -concentration: Si Co-Precursor Concentration M
+    -concentration: Si Co-Precursor Concentration M 0
     -additional_precursor: {True}
 
 Node|addition_si_co_precursor_1|SiPrecursor
     --name: Additional Si Co-Precursors 1 *
 Rel|final_gel->addition_si_co_precursor_1|uses_si_precursor
+    -concentration: Si Co-Precursor Concentration M 1
     -additional_precursor: {True}
 
 Node|addition_si_co_precursor_2|SiPrecursor
     --name: Additional Si Co-Precursors 2 *
 Rel|final_gel->addition_si_co_precursor_2|uses_si_precursor
+    -concentration: Si Co-Precursor Concentration M 2
     -additional_precursor: {True}
 
 Node|hybrid_si_precursor_0|HybridPrecursor
@@ -514,6 +534,7 @@ Node|additional_solvent|Solvent
     --name: Additional Solvents *
 Rel|final_gel->additional_solvent|uses_base_solvent
     -additional_solvent: {True}
+    -concentration: Additional Solvents Concentrations M
 
 Node|acid_catalyst|AcidCatalyst
     --name: Acid Catalyst *
@@ -534,11 +555,12 @@ Rel|final_gel->base_catalyst_1|uses_base_catalyst
 Node|modifier_0|Modifier  # TODO add molar ratios and volume ratios
     --name: Modifier 0 *
 Rel|final_gel->modifier_0|uses_modifier
-    -concentration: Modifier Concentration M
+    -concentration: Modifier Concentration M 0
 
 Node|modifier_1|Modifier
     --name: Modifier 1 *
 Rel|final_gel->modifier_1|uses_modifier
+    -concentration: Modifier Concentration M 1
 
 Node|modifier_2|Modifier
     --name: Modifier 2 *
