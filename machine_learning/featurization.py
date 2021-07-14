@@ -11,7 +11,8 @@ from machine_learning import Ingester
 
 class Featurizer(Ingester):
 
-    def __init__(self, df: DataFrame, y_columns: list, columns_to_drop: list = None):
+    def __init__(self, df: DataFrame, y_columns: list, columns_to_drop: list = None,
+                 drop_rows_missing_y: bool = True):
         """
         The overall goal of this script is fundamentally different than a normal featurization pipeline.
         If we were to featurize each of the smiles separately, then that would result in thousands of columns,
@@ -68,7 +69,8 @@ class Featurizer(Ingester):
         """
 
         # Pull functions and class objects from Ingester
-        super().__init__(df=df, y_columns=y_columns, columns_to_drop=columns_to_drop)
+        super().__init__(df=df, y_columns=y_columns, columns_to_drop=columns_to_drop,
+                         drop_rows_missing_y=drop_rows_missing_y)
         self.columns_featurized: list[str] = []
         self.raw_df: DataFrame = self.df.copy()
 
@@ -149,8 +151,8 @@ class Featurizer(Ingester):
             total_value = 0
             for value in row.values:
                 if not isnan(value):
-                   total_value += value
-                   counter += 1
+                    total_value += value
+                    counter += 1
 
             if counter == 0:
                 return 0
@@ -232,8 +234,7 @@ class Featurizer(Ingester):
 
 
 def featurize_si_aerogels(df: DataFrame, str_method: str, num_method: str, y_columns: list, drop_columns: list = None,
-                          remove_xerogels: bool = True):
-
+                          remove_xerogels: bool = True, drop_rows_missing_y: bool = True, leave_index: bool = False):
     str_methods = ["rdkit", "one_hot_encode", "number_index"]
     num_methods = ["zeros", "smart_values", "mean"]
 
@@ -246,11 +247,20 @@ def featurize_si_aerogels(df: DataFrame, str_method: str, num_method: str, y_col
                         f"\nList of available number methods are {num_methods}")
 
     # Define featurizer class to do calculations with
-    featurizer = Featurizer(df=df, y_columns=y_columns, columns_to_drop=drop_columns)
+    featurizer = Featurizer(df=df, y_columns=y_columns, columns_to_drop=drop_columns,
+                            drop_rows_missing_y=drop_rows_missing_y)
     df = featurizer.df
+
+    # Temporarily remove y_columns
+    y_columns_data = df[y_columns]
+    df = df.drop(y_columns, axis=1)
 
     if remove_xerogels:
         df = featurizer.remove_xerogels()
+
+    if leave_index:
+        index_data = df['index']
+        df = df.drop('index', axis=1)
 
     # Featurize the string columns
     if str_method == "one_hot_encode":
@@ -277,27 +287,13 @@ def featurize_si_aerogels(df: DataFrame, str_method: str, num_method: str, y_col
         pressure_columns = list(df.filter(regex="Pressure").columns)
         featurizer.replace_cols_with_nan_with_number(cols=pressure_columns, num=0.101325)
 
-        # Set columns to zero where averages do not make sense
-        ratio_columns = list(df.filter(regex="Ratio").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
+        for column in df:
+            if df[column].dtype == "float64":
+                df[column] = df[column].fillna(0)
 
-        ratio_columns = list(df.filter(regex="%").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=ratio_columns, num=0)
+    df[y_columns] = y_columns_data
 
-        # Set columns to averages where it makes more sense than zero or a set value
-        time_columns = list(df.filter(regex="Time").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=time_columns, num=0)
-
-        time_columns = list(df.filter(regex="time").columns)  #
-        featurizer.replace_cols_with_nan_with_number(cols=time_columns, num=0)
-
-        molar_columns = list(df.filter(regex="\(M\)").columns)
-        featurizer.replace_cols_with_nan_with_number(cols=molar_columns, num=0)
-
-        rate_columns = list(df.filter(regex="Rate").columns)  #
-        featurizer.replace_cols_with_nan_with_number(cols=rate_columns, num=0)
-
-        duration_columns = list(df.filter(regex="Duration").columns)
-        df = featurizer.replace_cols_with_nan_with_number(cols=duration_columns, num=0)
+    if leave_index:
+        df['index'] = index_data
 
     return df

@@ -1,15 +1,18 @@
-from sklearn.metrics import mean_squared_error, r2_score
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
 
-def train_reg(algorithm, estimator, train_features, train_target, 
-              test_features, test_target, fit_params=None, n=5, run_name=None):
+
+def train_reg(algorithm, estimator, train_features, train_target,
+              test_features, test_target, fit_params=None, n=5, run_name=None, slient=False):
     """
 
     :param algorithm:
-    :param estimator:
+    :param base_estimator:
     :param train_features:
     :param train_target:
     :param test_features:
@@ -17,16 +20,20 @@ def train_reg(algorithm, estimator, train_features, train_target,
     :param fit_params:
     :param n:
     :param run_name:
+    :param slient:
+    :param deep_copy_estimator:
     :return:
     """
 
-    print("Starting model training with {} replicates.\n".format(n), end=' ', flush=True)
+    # Add option to have nothing printed out if specified
+    if not slient:
+        print("Starting model training with {} replicates.\n".format(n), end=' ', flush=True)
 
     # empty arrays for storing replicated data
     r2 = np.empty(n)
     mse = np.empty(n)
     rmse = np.empty(n)
-    
+
     pva = pd.DataFrame([], columns=['actual', 'predicted'])
 
     for i in range(n):
@@ -38,8 +45,8 @@ def train_reg(algorithm, estimator, train_features, train_target,
             estimator.fit(train_features, train_target)
 
         predictions = estimator.predict(test_features)
-        
-        #Dataframe for replicate_model
+
+        # Dataframe for replicate_model
         pva['actual'] = test_target
         pva['predicted'] = predictions
 
@@ -48,28 +55,28 @@ def train_reg(algorithm, estimator, train_features, train_target,
         rmse[i] = np.sqrt(mean_squared_error(pva['actual'], pva['predicted']))
         # store as enumerated column for multipredict
         pva['predicted' + str(i)] = predictions
-    
+
     pva_scaled = pva
     # Holding variables for scaled data
-    scaled_r2 = np.empty(n+1)
-    scaled_mse = np.empty(n+1)
-    scaled_rmse = np.empty(n+1)
-    
+    scaled_r2 = np.empty(n + 1)
+    scaled_mse = np.empty(n + 1)
+    scaled_rmse = np.empty(n + 1)
+
     data_max = max(pva_scaled.max())  # Find abs min/max of predicted data
     data_min = min(pva_scaled.min())
 
     # Logic to scale the predicted data, using min/max scaling
     pva_scaled = (pva_scaled - data_min) / (data_max - data_min)
     predicted_columns = pva_scaled.columns.difference(['actual'])
-    #pva_scaled.to_csv("test_pva_scaled.csv")
+    # pva_scaled.to_csv("test_pva_scaled.csv")
     # Calculate r2, rmse, mse or for each pva columns
     for i, predicted_column in enumerate(predicted_columns):
         scaled_r2[i] = r2_score(pva_scaled['actual'], pva_scaled[predicted_column])
         scaled_mse[i] = mean_squared_error(pva_scaled['actual'], pva_scaled[predicted_column])
         scaled_rmse[i] = np.sqrt(scaled_mse[i])
-    
-    #print(np.isnan(scaled_r2).any()) 
-    #Gather MSE, RMSE, and STD for each molecule in the predictions and scaled_predictions csv files
+
+    # print(np.isnan(scaled_r2).any())
+    # Gather MSE, RMSE, and STD for each molecule in the predictions and scaled_predictions csv files
     def __gather_column_stats__(pva_df):
         pva_df['pred_avg'] = pva_df[predicted_columns].mean(axis=1)
         pva_df['pred_std'] = pva_df[predicted_columns].std(axis=1)
@@ -105,10 +112,10 @@ def train_reg(algorithm, estimator, train_features, train_target,
 
     predictions = pva
     predictions_stats = stats
-            
+
     scaled_predictions = pva_scaled
     scaled_predictions_stats = scaled_stats
-    
+
     if run_name is not None:
         predictions.to_csv(run_name + "_predictions.csv")
         scaled_predictions.to_csv(run_name + "_scaled_predictions.csv")

@@ -2,14 +2,15 @@ from typing import Union
 from pathlib import Path
 from warnings import warn
 
-from numpy import isnan, logical_not
+from numpy import nan, isnan, logical_not
 from pandas import DataFrame, read_csv, Series, get_dummies
 from sklearn.preprocessing import StandardScaler
 
 
 class Ingester:
 
-    def __init__(self, df: DataFrame, y_columns: list, columns_to_drop: list = None):
+    def __init__(self, df: DataFrame, y_columns: list, columns_to_drop: list = None,
+                 drop_rows_missing_y: bool = True):
         """
         The goal of this class is to take in the initial DataFrame, and so some initial data cleaning.
         Namely, replace the solvent names with SMILES, replace nan with zeros, and replace all the words with numbers.
@@ -33,7 +34,8 @@ class Ingester:
         self.y_columns = y_columns
 
         # Drop and rows that do not have a value in the y_columns
-        self.df = self.df.dropna(how='any', subset=y_columns)
+        if drop_rows_missing_y:
+            self.df = self.df.dropna(how='any', subset=y_columns)
 
         # Gather information in the compound info file
         compound_info_file = str(Path(__file__).parent.parent / "files/featurized_molecules/compound_info.csv")
@@ -194,9 +196,5 @@ class Ingester:
         return self.df
 
     def remove_xerogels(self):
-
-        aerogel_drying_methods = ['Supercritical Drying', 'Freeze Drying', 'Ambient Pressure Drying']
-        xerogel_drying_methods = ['atmospheric drying', 'oven drying']
-
-        self.df = self.df.loc[self.df['Drying Method'].isin(aerogel_drying_methods)]  # Drop all xerogels
+        self.df = self.df.loc[self.df['Final Gel Type'] == "Aerogel"]  # Drop all xerogels
         return self.df

@@ -14,6 +14,7 @@ class Scaler:
             std is for StandardScaler, minmax is for MinMaxScaler, None will skip
         :return:
         """
+
         if scale == "std":
             scale = StandardScaler()
         elif scale == "minmax":

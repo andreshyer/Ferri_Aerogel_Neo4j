@@ -66,8 +66,8 @@ def run_params(data, run_name, y_columns, drop_columns, paper_id_column, train_p
     print("Tuning Model...")
     if tuning_state:
         grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
-        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=50,
-                          cv_folds=10)  # Get parameters for hyper tuning
+        tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=10,
+                          cv_folds=5)  # Get parameters for hyper tuning
         estimator, params, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
     else:
         estimator = Regressor.get_regressor(algorithm)  # Get correct regressor (algorithm)
@@ -108,12 +108,10 @@ if __name__ == "__main__":
     file_path = "files/si_aerogels/machine_learning_si_aerogels.xlsx/"
 
     data_path = str(Path(__file__).parent / file_path)
+    data = read_excel(data_path)
 
-    print("Gathering data...")
-    data = convert_machine_readable(data_path)
-
-    algorithms = ['rf']
-    tuning = [True]
+    algorithms = ['nn']
+    tuning = [False]
     featurized = [False]
     clustered = [False]
     grouped = [False]
@@ -123,12 +121,13 @@ if __name__ == "__main__":
     # seed = int.from_bytes(urandom(3), "big")  # Generate an actual random number
     seed = None
 
-    y_columns = ['Surface Area (m2/g)']
+    y_columns = ['Surface Area m2/g']
 
-    drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-                    'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase',
-                    'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)', 'Gelation Time (mins)']
+    drop_columns = ['Porosity', 'Porosity %', 'Pore Volume cm3/g', 'Average Pore Diameter nm',
+                    'Bulk Density g/cm3', 'Young Modulus MPa', 'Crystalline Phase',
+                    'Average Pore Size nm', 'Thermal Conductivity W/mK', 'Gelation Time mins']
 
     paper_id_column = 'Title'  # Group by paper option
 
-    main(data, seed)
+    for i in range(3):
+        main(data, seed)
