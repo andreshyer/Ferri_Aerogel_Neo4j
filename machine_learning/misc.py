@@ -45,3 +45,14 @@ def zip_run_name_files(run_name):
 
     # Delete the non-zipped directory
     rmtree(working_dir)
+
+
+def pickle_estimator(run_name: str, estimator):
+    """
+
+    :param run_name: run name
+    :param estimator: Sci-Kit estimator, not a Keras Model
+    :return:
+    """
+
+    pass

@@ -170,6 +170,6 @@ class Grid:
                  'gdb': Grid.gdb_normal_grid,
                  'xgb': Grid.xgb_normal_grid,
                  'nn': Grid.keras_normal_grid,
-                }
+                 }
         return grids[algorithm]()
 

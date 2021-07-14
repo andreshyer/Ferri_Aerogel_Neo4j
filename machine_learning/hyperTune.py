@@ -10,10 +10,11 @@ class HyperTune:
     """
     TODO: Make sure Bayes work
     """
-    def __init__(self, algorithm, train_features, train_target, param_grid, opt_iter=10, n_jobs=3, 
-                 cv_folds=3, scoring="neg_mean_squared_error", deltay=None,fit_params=None):
-        
-        self.algorithm = algorithm 
+
+    def __init__(self, algorithm, train_features, train_target, param_grid, opt_iter=10, n_jobs=3,
+                 cv_folds=3, scoring="neg_mean_squared_error", deltay=None, fit_params=None):
+
+        self.algorithm = algorithm
         self.estimator = Regressor.get_regressor(self.algorithm)
         self.train_features = train_features
         self.train_target = train_target
@@ -24,10 +25,12 @@ class HyperTune:
         self.scoring = scoring
         self.deltay = deltay
         self.fit_params = fit_params
-    
+
+        print(self.estimator.get_params().keys())
+
     def hyper_tune(self, method="random"):
         """
-        """ 
+        """
 
         if method == "random":
             tune_algorithm = RandomizedSearchCV(estimator=self.estimator, param_distributions=self.param_grid,
@@ -42,23 +45,23 @@ class HyperTune:
                                            random_state=42,  # random seed
                                            scoring=self.scoring,  # scoring function to use (RMSE)
                                            n_jobs=self.n_jobs,  # number of parallel jobs (max = folds)
-                                           cv=self.cv_folds  # number of cross-val folds to use                                                                                        
-                                          )
-            
-            cp_delta = float((0.05 - min(self.train_target.min()))/(max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
+                                           cv=self.cv_folds
+                                           # number of cross-val folds to use
+                                           )
+
+            cp_delta = float((0.05 - min(self.train_target.min())) / (
+                        max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
 
             n_best = 5
             callback = callbacks.DeltaYStopper(cp_delta, n_best)
             tune_algorithm.fit(self.train_features, self.train_target, callback=callback)
 
         else:
-            Exception("No tuning method called " + method)
-            
+            raise TypeError("No tuning method called " + method)
+
         params = tune_algorithm.best_params_
         tune_score = tune_algorithm.best_score_
 
         estimator = Regressor.get_regressor(self.algorithm, given_param=params)
-        
+
         return estimator, params, tune_score
-        
-          

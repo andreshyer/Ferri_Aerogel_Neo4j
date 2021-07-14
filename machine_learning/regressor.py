@@ -9,6 +9,7 @@ class Regressor:
     Regressor Object that returns the appropriate regressor based on name and given parameters
     TODO: Add val_features and val_target for Neural Network
     """
+
     @staticmethod
     def get_regressor(algorithm, call=None, given_param=None, val_features=None, val_target=None):
 
@@ -20,14 +21,14 @@ class Regressor:
         :param val_features: Validation Feature
         :param val_target: validation target
         """
-        
-        skl_regs ={'rf': RandomForestRegressor,
-                   'gdb': GradientBoostingRegressor,
-                   'xgb': XGBRegressor,
-                   'nn': MLPRegressor
-                   }                    
+
+        skl_regs = {'rf': RandomForestRegressor,
+                    'gdb': GradientBoostingRegressor,
+                    'xgb': XGBRegressor,
+                    'nn': MLPRegressor
+                    }
         if algorithm in skl_regs.keys():
-            #print(algorithm)
+            # print(algorithm)
             if call:
                 estimator = skl_regs[algorithm]
             else:
