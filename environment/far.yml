@@ -25,6 +25,7 @@ dependencies:
       - neo4j==4.2.1
       - git+https://github.com/bp-kelley/descriptastorus@2.4.0
       - pandas-flavor==0.2.0
+      - keras-tuner
       #- git+https://github.com/dmlc/xgboost.git
       #- git+https://github.com/keras-team/keras.git
       #- git+https://github.com/slundberg/shap.git

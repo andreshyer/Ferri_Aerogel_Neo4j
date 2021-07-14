@@ -66,6 +66,7 @@ def pva_graph(predictions_stats, predictions,run_name, scaled=False):
     else:
         plt.savefig(run_name + '_' + f'PVA.png')
 
+
 def impgraph_tree_algorithm(algorithm, estimator, feature_list, run_name):
     """
     Objective: Make a feature importance graph. I'm limiting this to only rf and gdb since only they have feature

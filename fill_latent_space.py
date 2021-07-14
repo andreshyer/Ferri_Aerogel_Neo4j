@@ -1,15 +1,16 @@
 from pathlib import Path
-from os import urandom
+from os import urandom, getcwd
 from datetime import datetime
 from copy import deepcopy
+from json import dump
 
 from pandas import read_excel
 from numpy import isnan
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
-from machine_learning import DataSplitter, Grid, HyperTune, train, graph
+from machine_learning import Grid, HyperTune
 from machine_learning.misc import zip_run_name_files
 from machine_learning.featurization import featurize_si_aerogels
 
@@ -34,7 +35,8 @@ def save_predictions(predicted_data):
         for cell in wb['Comprehensive'][f"A{index}":f"HF{index}"][0]:
             cell.fill = PatternFill("solid", fgColor="fff000")
 
-    wb.save(filename="si_aerogels_with_predicted.xlsx")
+    output_file = Path(getcwd()) / f"{run_name}_si_aerogels_with_predicted.xlsx"
+    wb.save(filename=output_file)
 
 
 def filter_papers(df):
@@ -64,42 +66,17 @@ def filter_papers(df):
     for bad_title in bad_titles:
         df = df.loc[df['Title'] != bad_title]
 
-    print(f'Number of unique titles that contain aerogels: {len(unique_titles)}')
-    print(f'Number of papers with unknown surface areas: {papers_with_unknown_sa}')
-    print(f'Number of papers with all unknown surface areas: {papers_with_all_unknown_sa}')
-    print(f'Number of aerogels to predict surface area: {number_of_aerogels_to_fill}')
-    print(f'Titles to be removed with Aerogels because all surface areas are unknown: {bad_titles}')
-    print()
+    general_info = {'Number of unique titles that contain aerogels': len(unique_titles),
+                    'Number of papers with unknown surface areas': papers_with_unknown_sa,
+                    'Number of papers with all unknown surface areas': papers_with_all_unknown_sa,
+                    'Number of aerogels to predict surface area': number_of_aerogels_to_fill,
+                    'Titles to be removed with Aerogels because all surface areas are unknown': bad_titles,
+                    }
 
-    return df
+    for key, value in general_info.items():
+        print(f"{key}: {value}")
 
-
-def analyze_model(base_estimator, params, train_features, train_target, val_features, val_target):
-    estimator = deepcopy(base_estimator)
-    now = datetime.now()
-    date_string = now.strftime("_%Y%m%d-%H%M%S")
-    run_name = f"LatentSpace_ValidationData_{algorithm}_{date_string}_{seed}"
-
-    features_scaler = MinMaxScaler()
-    target_scaler = MinMaxScaler()
-
-    train_features = features_scaler.fit_transform(train_features)
-    train_target = target_scaler.fit_transform(train_target.to_numpy().reshape(-1, 1)).reshape(-1, )
-
-    val_features = features_scaler.transform(val_features)
-    val_target = target_scaler.transform(val_target.to_numpy().reshape(-1, 1)).reshape(-1, )
-
-    predictions, predictions_stats, \
-    scaled_predictions, scaled_predictions_stats = train.train_reg(algorithm, estimator, train_features,
-                                                                   train_target,
-                                                                   val_features,
-                                                                   val_target,
-                                                                   fit_params=params,
-                                                                   n=5,
-                                                                   slient=True)
-    estimator.fit(train_features, train_target)
-    graph.pva_graph(predictions_stats, predictions, run_name)
-    zip_run_name_files(run_name)
+    return df, general_info
 
 
 def model(training_data, testing_data, validation_percent: float = 0.1):
@@ -108,35 +85,31 @@ def model(training_data, testing_data, validation_percent: float = 0.1):
     train_features = training_data.drop(y_column, axis=1)
     train_target = training_data[y_column]
 
+    # Define testing features
+    test_features = testing_data
+
     # Create scalers
-    features_scaler = MinMaxScaler()
-    target_scaler = MinMaxScaler()
+    features_scaler = StandardScaler()
+    target_scaler = StandardScaler()
 
-    # Scale training features/target
+    # Scale training/testing features
     train_features = features_scaler.fit_transform(train_features)
-    train_target = target_scaler.fit_transform(train_target.to_numpy().reshape(-1, 1)).reshape(-1, )
+    test_features = features_scaler.transform(test_features)
 
-    # Scale testing features/target
-    test_features = features_scaler.transform(testing_data)
+    # Scale train target
+    train_target = target_scaler.fit_transform(train_target.to_numpy().reshape(-1, 1)).reshape(-1, )
 
     # Find HyperParameters
     grid = Grid.make_normal_grid(algorithm)  # Make grid for hyper tuning based on algorithm
-    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=100,
+    tuner = HyperTune(algorithm, train_features, train_target, grid, opt_iter=10,
                       cv_folds=10)  # Get parameters for hyper tuning
     print("Finding Best HyperParameters...")
-    estimator, params, tune_score = tuner.hyper_tune(method="random")  # Hyper tuning the model
-
-    # Make sure the HyperParameters are decent
-    if validation_percent:
-        print("Analyzing HyperParameters...")
-        splitter = DataSplitter(df=training_data, y_columns=[y_column], train_percent=(1 - validation_percent),
-                                test_percent=validation_percent, val_percent=0, grouping_column=None,
-                                state=seed)
-        val_features, sub_train_features, val_target, sub_train_target, feature_list = splitter.split_data()
-        analyze_model(estimator, params, sub_train_features, sub_train_target, val_features, val_target)
+    tuner, estimator, params = tuner.hyper_tune(method="random")  # Hyper tuning the model
+    tuner.plot_overfit(run_name=run_name)
+    tuner.plot_val_pva(run_name=run_name, target_scaler=target_scaler)
 
     print("Training Model...")
-    estimator.fit(train_features, train_target)
+    estimator.fit(train_features, train_target, epochs=20)
     predictions = estimator.predict(test_features)
 
     # Unscale the predictions
@@ -163,7 +136,7 @@ def main(data):
     all_data = all_data.reset_index()  # Add column with indexes
 
     # Remove any papers that have all nan surface area aerogels
-    all_data = filter_papers(all_data)
+    all_data, general_info = filter_papers(all_data)
 
     # Gather and featurize all data, dropping xerogels in the process
     all_data = featurize_si_aerogels(df=all_data, str_method="one_hot_encode", num_method="smart_values",
@@ -187,6 +160,10 @@ def main(data):
 
     save_predictions(data_to_predict)
 
+    output_file = Path(getcwd()) / f"{run_name}_gen_info.json"
+    with open(output_file, 'w') as f:
+        dump(general_info, f)
+
 
 if __name__ == "__main__":
     dataset = r"machine_learning_si_aerogels.csv"
@@ -196,10 +173,15 @@ if __name__ == "__main__":
     data_path = str(Path(__file__).parent / file_path)
     data = read_excel(data_path)
     seed = int.from_bytes(urandom(3), "big")  # Generate an actual random number
-    algorithm = 'xgb'
+    algorithm = 'nn'
+
+    now = datetime.now()
+    date_string = now.strftime("_%Y%m%d-%H%M%S")
+    run_name = f"LatentSpace_{algorithm}_{date_string}_{seed}"
 
     y_column = 'Surface Area m2/g'
     drop_columns = ['Title', 'Porosity', 'Porosity %', 'Pore Volume cm3/g', 'Average Pore Diameter nm',
                     'Bulk Density g/cm3', 'Young Modulus MPa', 'Crystalline Phase',
                     'Average Pore Size nm', 'Thermal Conductivity W/mK', 'Gelation Time mins']
     main(data)
+    zip_run_name_files(run_name=run_name)

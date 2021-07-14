@@ -4,110 +4,67 @@ from shutil import rmtree
 
 from numpy import nan
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from keras.models import Sequential
 from keras.layers import Dropout, Dense
 from keras.optimizers import Adam
 from keras_tuner import Hyperband, RandomSearch
+from tensorflow import keras
+
 from keras.callbacks import EarlyStopping
 import numpy as np
 import matplotlib.pyplot as plt
-from pandas import read_csv, DataFrame
+from pandas import read_excel, DataFrame
 from sklearn.metrics import mean_squared_error, r2_score
 import tensorflow as tf
 from tensorboard.backend.event_processing import event_accumulator
 
-from machine_learning import Featurizer, DataSplitter, Scaler, graph
-
-
-def cluster_data(data):
-    def test_if_has(row):
-        values = row.values
-        for value in values:
-            if value in si_precursor_subset:
-                return True
-        return False
-
-    def reject_outliers(value):
-        if abs(value - mean_surface_area) < (3 * std_surface_area):
-            return True
-        return False
-
-    si_precursor_subset = ['TEOS']
-    si_precursor_columns = ['Si Precursor (0)', 'Si Precursor (1)', 'Si Precursor (2)']
-    data = data.loc[data[si_precursor_columns].apply(test_if_has, axis=1)]  # Grab Aerogels with TEOS
-    data = data.loc[data['Formation Method (0)'].isin(['Sol-gel'])]  # Grab sol-gel aerogels
-    data = data.loc[data['Formation Method (1)'].isin([nan])]  # Make sure that is the only formation method
-
-    # Remove outliers
-    mean_surface_area = data['Surface Area (m2/g)'].mean()
-    std_surface_area = data['Surface Area (m2/g)'].std()
-    data = data.loc[data['Surface Area (m2/g)'].apply(reject_outliers)]
-    # data = data.loc[data['Surface Area (m2/g)'] < 1000]
-
-    data.reset_index(drop=True, inplace=True)
-    return data
-
-
-def single_out(data):
-    new_df = DataFrame(columns=data.columns)
-
-    paper_id_columns = set(data[paper_id_column].tolist())
-    for col in paper_id_columns:
-        rows = data.loc[data[paper_id_column] == col].to_dict('records')
-        row = rows[randint(0, len(rows) - 1)]
-        new_df = new_df.append(row, ignore_index=True)
-    return new_df
+from machine_learning import DataSplitter, Scaler, graph
+from machine_learning.featurization import featurize_si_aerogels
 
 
 # gather data
-dataset = r"si_aerogel_AI_machine_readable_v2.csv"
+dataset = r"machine_learning_si_aerogels.xlsx.csv"
 folder = "si_aerogels"
-file_path = "files/si_aerogels/si_aerogel_AI_machine_readable_v2.csv/"
+file_path = "files/si_aerogels/machine_learning_si_aerogels.xlsx/"
 
 data_path = str(Path(__file__).parent.parent / file_path)
-data = read_csv(data_path)
+data = read_excel(data_path)
 
-y_columns = ['Surface Area (m2/g)']
-drop_columns = ['Porosity', 'Porosity (%)', 'Pore Volume (cm3/g)', 'Average Pore Diameter (nm)',
-                'Bulk Density (g/cm3)', 'Young Modulus (MPa)', 'Crystalline Phase', 'Nanoparticle Size (nm)',
-                'Average Pore Size (nm)', 'Thermal Conductivity (W/mK)']
-paper_id_column = 'paper_id'  # Group by paper option
+y_columns = ['Surface Area m2/g']
+drop_columns = ['Title', 'Porosity', 'Porosity %', 'Pore Volume cm3/g', 'Average Pore Diameter nm',
+                'Bulk Density g/cm3', 'Young Modulus MPa', 'Crystalline Phase',
+                'Average Pore Size nm', 'Thermal Conductivity W/mK', 'Gelation Time mins']
 
-data = single_out(data)
-# data = cluster_data(data)
 
-data = data.drop([paper_id_column], axis=1)
-paper_id_column = None
+data = featurize_si_aerogels(df=data, str_method="one_hot_encode", num_method="smart_values",
+                             y_columns=y_columns, drop_columns=drop_columns, remove_xerogels=True)
 
-featurizer = Featurizer(df=data, y_columns=y_columns, columns_to_drop=drop_columns)
-featurizer.remove_xerogels()
-# featurizer.remove_non_smiles_str_columns(suppress_warnings=True)
-# featurizer.replace_compounds_with_smiles()
-# data = featurizer.featurize_molecules(method='rdkit2d')
-
-# featurizer.drop_all_word_columns(suppress_warning=True)
-# data = featurizer.replace_nan_with_zeros()
-
-featurizer.replace_words_with_numbers(ignore_smiles=False)
-data = featurizer.replace_nan_with_zeros()
 
 splitter = DataSplitter(df=data, y_columns=y_columns, train_percent=70,
-                        test_percent=20, val_percent=10, grouping_column=paper_id_column,
-                        state=None)
+                        test_percent=20, val_percent=10, state=None)
 x_test, x_train, x_val, y_test, y_train, y_val, feature_list = splitter.split_data()
 
-x_test, x_train, x_val = Scaler().scale_data("std", x_train, x_test, x_val)  # Scaling features
-y_test, y_train, y_val = Scaler().scale_data("std", y_train, y_test, y_val)  # Scaling features
+features_scaler = StandardScaler()
+target_scaler = StandardScaler()
 
+# Scale training features/target
+x_train = features_scaler.fit_transform(x_train)
+x_test = features_scaler.transform(x_test)
+x_val = features_scaler.transform(x_val)
+
+# Scale testing features/target
+y_train = target_scaler.fit_transform(y_train.to_numpy().reshape(-1, 1)).reshape(-1, )
+y_test = target_scaler.transform(y_test.to_numpy().reshape(-1, 1)).reshape(-1, )
+y_val = target_scaler.transform(y_val.to_numpy().reshape(-1, 1)).reshape(-1, )
 
 # model = Sequential()
-# model.add(Dense(4, activation='relu'))
-# model.add(Dense(4, activation='relu'))
+# model.add(Dense(3, activation='relu'))
 # model.add(Dense(1, name='output_layer'))
 # model.compile(loss='mse', optimizer='adam', metrics=["mse", "mae"])
 #
-# history = model.fit(x_train, y_train, batch_size=64, epochs=100, validation_data=(x_val, y_val))
+# history = model.fit(x_train, y_train, batch_size=5, epochs=10, validation_data=(x_val, y_val))
+
 #
 # plt.plot(history.history['mae'], '-*')
 # plt.plot(history.history['val_mae'], '--o')
@@ -127,12 +84,12 @@ def no_dropout_model(hp):
             activation='relu',
         )
     )
-    model.add(
-        Dense(
-            units=hp.Int("units", min_value=8, max_value=512, step=8),
-            activation='relu',
-        )
-    )
+    # model.add(
+    #     Dense(
+    #         units=hp.Int("units", min_value=8, max_value=512, step=8),
+    #         activation='relu',
+    #     )
+    # )
     model.add(Dense(1))
     model.compile(
         optimizer=Adam(
@@ -180,18 +137,26 @@ def dropout_model(hp):
     return model
 
 
+def build_model(hp):
+    model = keras.Sequential()
+    model.add(keras.layers.Dense(
+        hp.Choice('units', [8, 16, 32]),
+        activation='relu'))
+    model.add(keras.layers.Dense(1, activation='relu'))
+    model.compile(loss='mse')
+    return model
+
+
 # tuner = RandomSearch(
-#     build_model,
-#     objective="val_mse",
-#     max_trials=5,
-#     executions_per_trial=5,
-#     overwrite=True,
-#     directory="temp"
+#     no_dropout_model,
+#     objective="val_loss",
+#     max_trials=1
 # )
+
 
 tuner = Hyperband(
     no_dropout_model,
-    objective="val_mse",
+    objective="val_loss",
     max_epochs=100,
     hyperband_iterations=1,
     project_name="untitled_project"
@@ -215,7 +180,7 @@ rmtree("untitled_project")
 
 model = tuner.hypermodel.build(best_hps)
 
-history = model.fit(x_train, y_train, epochs=50, validation_data=(x_val, y_val))
+history = model.fit(x_train, y_train, epochs=20, validation_data=(x_val, y_val))
 plt.plot(history.history['mae'], '-*')
 plt.plot(history.history['val_mae'], '--o')
 plt.title('MAE: Train and Validation', fontsize=14, fontweight='bold')
@@ -228,7 +193,7 @@ pva = None
 r2 = []
 for i in range(5):
     model = tuner.hypermodel.build(best_hps)
-    model.fit(x_train, y_train, batch_size=64, epochs=50, validation_data=(x_val, y_val))
+    model.fit(x_train, y_train, epochs=20, validation_data=(x_val, y_val))
     predictions = model.predict(x_test)
     r2.append(r2_score(y_test, predictions))
     if i == 0:

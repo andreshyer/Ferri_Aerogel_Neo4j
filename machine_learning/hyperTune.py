@@ -5,6 +5,8 @@ import skopt
 from skopt import BayesSearchCV
 from skopt import callbacks
 
+from machine_learning.keras_nn import HyperTuneKeras
+
 
 class HyperTune:
     """
@@ -26,13 +28,17 @@ class HyperTune:
         self.deltay = deltay
         self.fit_params = fit_params
 
-        print(self.estimator.get_params().keys())
-
     def hyper_tune(self, method="random"):
         """
         """
 
-        if method == "random":
+        if self.algorithm == "nn":
+            tuner = HyperTuneKeras(self.train_features, self.train_target,
+                                   seed=None, validation_percent=0.1)
+            estimator, params = tuner.tune()
+            return tuner, estimator, params
+
+        elif method == "random":
             tune_algorithm = RandomizedSearchCV(estimator=self.estimator, param_distributions=self.param_grid,
                                                 n_iter=self.opt_iter, scoring=self.scoring, random_state=42,
                                                 n_jobs=self.n_jobs, cv=self.cv_folds)
@@ -50,7 +56,7 @@ class HyperTune:
                                            )
 
             cp_delta = float((0.05 - min(self.train_target.min())) / (
-                        max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
+                    max(self.train_target.max()) - min(self.train_target.min())))  # Min max scaling
 
             n_best = 5
             callback = callbacks.DeltaYStopper(cp_delta, n_best)
