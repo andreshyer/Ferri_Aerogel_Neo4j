@@ -3,6 +3,7 @@ from os import urandom, getcwd
 from datetime import datetime
 from copy import deepcopy
 from json import dump
+from shutil import rmtree
 
 from pandas import read_excel
 from numpy import isnan
@@ -106,7 +107,7 @@ def model(training_data, testing_data, validation_percent: float = 0.1):
     print("Finding Best HyperParameters...")
     tuner, estimator, params = tuner.hyper_tune(method="random")  # Hyper tuning the model
     tuner.plot_overfit(run_name=run_name)
-    tuner.plot_val_pva(run_name=run_name, target_scaler=target_scaler)
+    tuner.plot_val_pva(run_name=run_name)
 
     print("Training Model...")
     estimator.fit(train_features, train_target, epochs=20)

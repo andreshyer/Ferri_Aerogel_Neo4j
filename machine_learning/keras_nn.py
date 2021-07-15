@@ -12,7 +12,7 @@ from tensorflow.keras.callbacks import TensorBoard
 from keras.models import Sequential
 from keras.layers import Dropout, Dense
 from keras.optimizers import Adam
-from keras_tuner import Hyperband
+from keras_tuner import Hyperband, RandomSearch
 
 from machine_learning import graph
 
@@ -37,7 +37,7 @@ class HyperTuneKeras:
         model.add(
             Dense(
                 kernel_initializer='normal',
-                units=hp.Int("units", min_value=8, max_value=512, step=8),
+                units=hp.Int("units", min_value=300, max_value=500, step=8),
                 activation='relu',
             )
         )
@@ -62,9 +62,15 @@ class HyperTuneKeras:
             self.one_hidden_layer,
             objective="val_loss",
             max_epochs=20,
-            hyperband_iterations=5,
+            hyperband_iterations=1,
             project_name="untitled_project"
         )
+
+        # self.tuner = RandomSearch(
+        #     self.one_hidden_layer,
+        #     objective="val_loss",
+        #     max_trials=1
+        # )
 
         self.tuner.search(self.train_features, self.train_target,
                           validation_data=(self.val_features, self.val_target),
@@ -78,8 +84,9 @@ class HyperTuneKeras:
         return self.estimator, self.params
 
     def plot_overfit(self, run_name):
-        history = self.estimator.fit(self.train_features, self.train_target, epochs=20,
-                                     validation_data=(self.val_features, self.val_target))
+        estimator = self.tuner.hypermodel.build(self.params)
+        history = estimator.fit(self.train_features, self.train_target, epochs=20,
+                                validation_data=(self.val_features, self.val_target))
         plt.plot(history.history['mae'], '-*')
         plt.plot(history.history['val_mse'], '--o')
         plt.title('MSE: Train and Validation', fontsize=14, fontweight='bold')
@@ -89,17 +96,12 @@ class HyperTuneKeras:
         output_file = Path(getcwd()) / f"{run_name}_overfit.png"
         plt.savefig(output_file)
 
-    def plot_val_pva(self, run_name, target_scaler):
+    def plot_val_pva(self, run_name):
 
         pva = None
         r2 = []
 
         tms = MinMaxScaler()  # target minmax scaler
-
-        # Return train target to original scaling
-        scaled_train_target = target_scaler.inverse_transform(self.train_target.reshape(-1, 1)).reshape(-1, )
-        # MinMax Scale train target
-        scaled_train_target = tms.fit_transform(scaled_train_target.reshape(-1, 1)).reshape(-1, )
 
         for i in range(5):
 
@@ -107,20 +109,15 @@ class HyperTuneKeras:
             model.fit(self.train_features, self.train_target, epochs=20)
             predictions = model.predict(self.val_features)
 
-            # Return predictions to original scaling
-            scaled_predictions = target_scaler.inverse_transform(predictions.reshape(-1, 1)).reshape(-1, )
-            # MinMax Scale predictions
-            scaled_predictions = tms.transform(scaled_predictions.reshape(-1, 1)).reshape(-1, )
-
-            r2.append(r2_score(scaled_train_target, scaled_predictions))
+            r2.append(r2_score(self.val_target, predictions))
             if i == 0:
                 pva = DataFrame(predictions, columns=[f"pred_{i}"])
             else:
-                pva[f"pred_{i}"] = scaled_predictions
+                pva[f"pred_{i}"] = predictions
 
         pva["pred_std"] = pva.std(axis=1)
         pva["pred_avg"] = pva.mean(axis=1)
-        pva["actual"] = scaled_train_target
+        pva["actual"] = self.val_target
 
         r2 = array(r2)
         r2_std = r2.std()
